@@ -97,7 +97,7 @@ describe("access, queue, quiz, misc", () => {
     assert.ok(q.includes("LATE_GRACE_MS") || q.includes("late"), "overtime exams scored zero");
   });
   it("middleware is Edge-safe; bank paginates; notifications capped", () => {
-    const m = read("middleware.ts");
+    const m = read("src/middleware.ts");
     assert.ok(!m.includes("Buffer.from"), "no Buffer in Edge middleware");
     const b = read("src/app/api/bank/route.ts");
     assert.ok(b.includes("skip"), "bank paginates");

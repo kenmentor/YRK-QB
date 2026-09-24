@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { gradeAnswer } from "@/lib/lifecycle";
 
+export const dynamic = "force-dynamic";
+
 const LATE_GRACE_MS = 30 * 1000;
 
 export async function POST(req: Request) {

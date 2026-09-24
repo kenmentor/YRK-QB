@@ -4,6 +4,8 @@ import { getAuthUser, getMembership } from "@/lib/auth";
 import { canMerge } from "@/lib/permissions";
 import { normalizeStem } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 type DraftRow = { id: string; workspaceId: string; status: string; stem: string; topicId: string | null; type: string; options: string; correct: string; explanation: string; difficulty: string; tags: string; imageUrl: string | null };
 
 export async function POST(req: Request) {

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // Subjects-first bank landing: every subject with its path, description, topic + question counts.
 export async function GET() {
   const subjects = (await db.subject.findMany({ take: 100 }) as unknown as { id: string; name: string; description?: string; examId: string }[]);

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // User model: Session → Course → Subject → Topic → Question (atomic).
 // Storage names: session=examBody, course=exam. Each node carries description + published counts.
 export async function GET() {

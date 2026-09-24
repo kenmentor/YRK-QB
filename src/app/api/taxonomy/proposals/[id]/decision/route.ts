@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { normalize } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 // Resolve the taxonomy curation queue. Admins only.
 // Body: { decision: "approve" | "reject" }
 // Approve creates the real node (exam/subject/topic); reject closes it.

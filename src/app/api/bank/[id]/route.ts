@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const q = (await db.question.findUnique({ where: { id: params.id } }) as unknown as {
     id: string; stem: string; options: string; correct: string; explanation: string;

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { getAuthUser, getMembership, getSessionUser } from "@/lib/auth";
 import { canInvite } from "@/lib/permissions";
 
+export const dynamic = "force-dynamic";
+
 const ROLES = ["owner", "editor", "reviewer"];
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {

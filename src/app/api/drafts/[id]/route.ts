@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { getAuthUser, getMembership } from "@/lib/auth";
 import { assertCanEdit } from "@/lib/permissions";
 
+export const dynamic = "force-dynamic";
+
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });

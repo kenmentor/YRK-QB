@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });

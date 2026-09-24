@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // Filters: sessionId (=bodyId), courseId (=examId), subjectId, topicId, difficulty, type, appliable, q
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

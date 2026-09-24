@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { normalizeStem } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 // Admin inbox: list proposals (pending by default)
 export async function GET(req: Request) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);

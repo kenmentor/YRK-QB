@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 // Creator approves/rejects an edit application. Body: { decision: "approved" | "rejected" }
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);

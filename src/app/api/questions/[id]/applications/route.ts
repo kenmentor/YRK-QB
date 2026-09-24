@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 // List applications for a question (creator sees all; applicant sees own)
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);

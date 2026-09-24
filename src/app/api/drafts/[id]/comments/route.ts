@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { getAuthUser, getMembership } from "@/lib/auth";
 import { rateLimited } from "@/lib/ratelimit";
 
+export const dynamic = "force-dynamic";
+
 async function memberWorkspace(userId: string, draftId: string) {
   const draft = (await db.questionDraft.findUnique({ where: { id: draftId } }) as unknown as { workspaceId: string } | null);
   if (!draft) return null;

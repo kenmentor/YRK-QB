@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const topics = (await db.topic.findMany({ take: 100 }) as unknown as { id: string; name: string; subjectId: string }[]);
   const out = [];

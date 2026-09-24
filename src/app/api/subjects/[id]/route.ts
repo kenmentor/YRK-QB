@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const s = (await db.subject.findUnique({ where: { id: params.id } }) as unknown as {
     id: string; name: string; description?: string; examId: string;

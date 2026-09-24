@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser, getMembership } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 // Remove a member (owner only) or leave (self). Last owner is protected.
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);

@@ -1,7 +1,7 @@
 import { PageHero } from "@/components/page-hero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TERMS } from "@/components/terms-modal";
+import { TERMS } from "@/lib/terms";
 
 export default function TermsPage() {
   return (

@@ -4,6 +4,8 @@ import { getAuthUser } from "@/lib/auth";
 import { validateQuestion } from "@/lib/validation";
 import { normalizeStem } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 // Admin decision on a proposal. Body: { decision: "commit" | "cancel", message?: string }
 // - commit (+optional message) → question published, contributor notified
 // - cancel + message → contributor notified with message

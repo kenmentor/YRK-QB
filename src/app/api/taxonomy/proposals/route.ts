@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { normalize } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   const { kind, parentId, name } = await req.json();
   const normName = normalize(name);

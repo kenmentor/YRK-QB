@@ -5,6 +5,8 @@ import { validateQuestion } from "@/lib/validation";
 import { assertTransition } from "@/lib/lifecycle";
 import { canEdit } from "@/lib/permissions";
 
+export const dynamic = "force-dynamic";
+
 function badTransition(from: string, to: string) {
   return NextResponse.json({ error: `Cannot move from ${from} to ${to}` }, { status: 400 });
 }

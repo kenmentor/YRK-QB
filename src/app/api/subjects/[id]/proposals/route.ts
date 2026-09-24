@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { rateLimited } from "@/lib/ratelimit";
 
+export const dynamic = "force-dynamic";
+
 // Create a contribution proposal on a subject. Body:
 // { kind: "new_question", payload: {type,stem,options,correct,explanation,difficulty,topicId}, message, termsAccepted: true }
 export async function POST(req: Request, { params }: { params: { id: string } }) {

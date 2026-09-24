@@ -3,6 +3,8 @@ import { z } from "zod";
 import { authenticateUser, signToken, setSessionCookie } from "@/lib/auth";
 import { rateLimited } from "@/lib/ratelimit";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({ email: z.string().email(), password: z.string().min(1) });
 
 export async function POST(req: Request) {

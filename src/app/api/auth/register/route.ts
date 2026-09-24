@@ -3,6 +3,8 @@ import { z } from "zod";
 import { registerUser, signToken, setSessionCookie } from "@/lib/auth";
 import { rateLimited } from "@/lib/ratelimit";
 
+export const dynamic = "force-dynamic";
+
 // Self-service roles only. Admin is granted out-of-band (seeded);
 // letting the request body choose it was a privilege-escalation hole.
 const schema = z.object({

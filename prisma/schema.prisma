@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  password  String?
+  role      String   @default("learner") // learner | professor | admin — global role; workspace role lives on Membership
+  createdAt DateTime @default(now())
+  memberships Membership[]
+  versions  QuestionVersion[]
+  reviews   Review[]
+  comments  Comment[]
+  attempts  QuizAttempt[]
+}
+
+model Workspace {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  focus       String?
+  examId      String?  @db.ObjectId
+  exam        Exam?    @relation(fields: [examId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inviteCode  String   @unique @default(cuid())
+  createdAt   DateTime @default(now())
+  memberships Membership[]
+  drafts      QuestionDraft[]
+  mergeRecords MergeRecord[]
+}
+
+model Membership {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  workspaceId String   @db.ObjectId
+  role        String   // owner | editor | reviewer
+  createdAt   DateTime @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userId, workspaceId])
+}
+
+model ExamBody {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  normName String @unique
+  exams    Exam[]
+}
+
+model Exam {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  bodyId   String   @db.ObjectId
+  body     ExamBody @relation(fields: [bodyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  name     String
+  normName String
+  subjects Subject[]
+  workspaces Workspace[]
+
+  @@unique([bodyId, normName])
+}
+
+model Subject {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  examId   String @db.ObjectId
+  exam     Exam   @relation(fields: [examId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  name     String
+  normName String
+  topics   Topic[]
+
+  @@unique([examId, normName])
+}
+
+model Topic {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  subjectId String  @db.ObjectId
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  name      String
+  normName  String
+  questions Question[]
+
+  @@unique([subjectId, normName])
+}
+
+model TaxonomyProposal {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  kind      String
+  parentId  String
+  name      String
+  normName  String
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}
+
+model Question {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  topicId     String?  @db.ObjectId
+  topic       Topic?   @relation(fields: [topicId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  type        String
+  stem        String
+  normStem    String
+  options     String
+  correct     String
+  explanation String
+  difficulty  String   @default("medium")
+  tags        String   @default("[]")
+  imageUrl    String?
+  mergedIntoId String? @db.ObjectId
+  mergedInto  Question? @relation("MergeAlias", fields: [mergedIntoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  aliases     Question[] @relation("MergeAlias")
+  setId       String?
+  createdAt   DateTime @default(now())
+  answers     AttemptAnswer[]
+}
+
+model QuestionDraft {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String   @db.ObjectId
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  authorId    String   @db.ObjectId
+  topicId     String?  @db.ObjectId
+  type        String   @default("mcq")
+  stem        String   @default("")
+  options     String   @default("[]")
+  correct     String   @default("[]")
+  explanation String   @default("")
+  difficulty  String   @default("medium")
+  tags        String   @default("[]")
+  imageUrl    String?
+  status      String   @default("draft")
+  reviewSnapshotId String?
+  conflictBranch Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  versions    QuestionVersion[]
+  reviews     Review[]
+  comments    Comment[]
+}
+
+model QuestionVersion {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  draftId   String   @db.ObjectId
+  draft     QuestionDraft @relation(fields: [draftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  authorId  String   @db.ObjectId
+  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stem      String
+  options   String
+  correct   String
+  explanation String
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  draftId   String   @db.ObjectId
+  draft     QuestionDraft @relation(fields: [draftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reviewerId String  @db.ObjectId
+  reviewer  User     @relation(fields: [reviewerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  verdict   String
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  draftId   String   @db.ObjectId
+  draft     QuestionDraft @relation(fields: [draftId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  authorId  String   @db.ObjectId
+  author    User     @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model MergeRecord {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  workspaceId String?  @db.ObjectId
+  workspace   Workspace? @relation(fields: [workspaceId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  type        String
+  sourceIds   String
+  targetIds   String
+  actorId     String
+  createdAt   DateTime @default(now())
+}
+
+model QuizAttempt {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  mode      String
+  filter    String   @default("{}")
+  score     Int      @default(0)
+  total     Int      @default(0)
+  createdAt DateTime @default(now())
+  answers   AttemptAnswer[]
+}
+
+model AttemptAnswer {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  attemptId  String   @db.ObjectId
+  attempt    QuizAttempt @relation(fields: [attemptId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  questionId String   @db.ObjectId
+  question   Question @relation(fields: [questionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  given      String
+  correct    Boolean
+}

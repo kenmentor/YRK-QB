@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0f172a;
+  --accent: #4f46e5;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: #e0e7ff; color: #1e1b4b; }
+
+/* consistent focus */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* quiet scrollbars */
+* { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+
+/* ---- mobile native feel ---- */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Grid children must be allowed to shrink or long stems blow out the layout */
+.grid > * { min-width: 0; }
+
+/* User-authored content wraps everywhere instead of overflowing cards */
+.yrk-wrap, .yrk-wrap p, .yrk-wrap div, .yrk-wrap span, .yrk-wrap h3, .yrk-wrap li {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* iOS Safari zooms on focus when inputs are <16px, kills the native feel */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+@keyframes yrk-rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes yrk-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.yrk-modal { animation: yrk-rise 0.22s ease-out; }
+.yrk-overlay { animation: yrk-fade 0.18s ease-out; }
+.yrk-toast-in { animation: yrk-rise 0.25s ease-out; }
+
+/* field labels */
+.yrk-label { @apply text-[13px] font-medium text-slate-600; }
+.yrk-hint { @apply text-xs text-slate-400; }
+.yrk-select { @apply h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm shadow-sm transition hover:border-slate-300; }

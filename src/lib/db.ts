@@ -128,5 +128,6 @@ export const db = {
   attemptAnswer: makeModel("attemptAnswers"),
   editApplication: makeModel("editApplications"),
   proposal: makeModel("proposals"),
-  notification: makeModel("notifications")
+  notification: makeModel("notifications"),
+  joinRequest: makeModel("joinRequests")
 };

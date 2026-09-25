@@ -104,4 +104,20 @@ describe("access, queue, quiz, misc", () => {
     const n = read("src/app/api/notifications/route.ts");
     assert.ok(n.includes("take: 30"), "notifications fetched capped");
   });
+  it("workspace-bank linkage: origin stamp, revision updates, join gates", () => {
+    const m = read("src/app/api/merges/route.ts");
+    assert.ok(m.includes("revisionOf"), "revision drafts update canonical");
+    assert.ok(m.includes("workspaceId: draft.workspaceId"), "publishes stamp origin");
+    const d = read("src/app/api/drafts/route.ts");
+    assert.ok(d.includes("revisionOf"), "drafts accept revision link");
+    assert.ok(fs.existsSync(path.join(root, "src/app/api/workspaces/[id]/progress/route.ts")), "course-builder progress exists");
+    assert.ok(fs.existsSync(path.join(root, "src/app/api/workspaces/[id]/published/route.ts")), "bank mirror exists");
+    assert.ok(fs.existsSync(path.join(root, "src/app/api/join-requests/[id]/decision/route.ts")), "join decision exists");
+    const j = read("src/app/api/workspaces/[id]/join/route.ts");
+    assert.ok(j.includes("Owners only") || j.includes("owner"), "join inbox is owner-only");
+    assert.ok(fs.existsSync(path.join(root, "src/app/api/proposals/mine/route.ts")), "my-commits exists");
+    assert.ok(fs.existsSync(path.join(root, "src/app/api/proposals/[id]/route.ts")), "proposal edit/withdraw exists");
+    const w = read("src/app/api/workspaces/route.ts");
+    assert.ok(w.includes("myRole"), "directory exposes per-workspace role");
+  });
 });

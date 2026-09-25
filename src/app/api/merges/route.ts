@@ -6,7 +6,7 @@ import { normalizeStem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type DraftRow = { id: string; workspaceId: string; status: string; stem: string; topicId: string | null; type: string; options: string; correct: string; explanation: string; difficulty: string; tags: string; imageUrl: string | null };
+type DraftRow = { id: string; workspaceId: string; status: string; stem: string; topicId: string | null; type: string; options: string; correct: string; explanation: string; difficulty: string; tags: string; imageUrl: string | null; revisionOf?: string | null };
 
 export async function POST(req: Request) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
@@ -25,12 +25,29 @@ export async function POST(req: Request) {
     if (draft.status !== "approved") return NextResponse.json({ error: "Draft must be approved" }, { status: 409 });
     // Direct normStem lookup instead of scanning 200 docs (missed dupes past 200).
     const dup = (await db.question.findFirst({ where: { normStem: normalizeStem(draft.stem) } }) as unknown as { id: string; mergedIntoId?: string } | null);
-    const liveDup = dup && !dup.mergedIntoId ? dup : null;
+    const liveDup = dup && !dup.mergedIntoId && dup.id !== draft.revisionOf ? dup : null;
+    // Revision: update the canonical question in place (origin preserved).
+    if (draft.revisionOf) {
+      const target = await db.question.findUnique({ where: { id: draft.revisionOf } });
+      if (!target) return NextResponse.json({ error: "Original question gone" }, { status: 404 });
+      const question = await db.question.update({
+        where: { id: draft.revisionOf },
+        data: {
+          topicId: draft.topicId, type: draft.type, stem: draft.stem, normStem: normalizeStem(draft.stem),
+          options: draft.options, correct: draft.correct, explanation: draft.explanation,
+          difficulty: draft.difficulty, tags: draft.tags, imageUrl: draft.imageUrl
+        }
+      });
+      await db.questionDraft.update({ where: { id: draft.id }, data: { status: "merged" } });
+      await db.mergeRecord.create({ data: { workspaceId: draft.workspaceId, type, sourceIds: JSON.stringify(draftIds), targetIds: JSON.stringify([(question as { id: string }).id]), actorId: user.id } });
+      return NextResponse.json({ question, revised: true }, { status: 201 });
+    }
     const question = await db.question.create({
       data: {
         topicId: draft.topicId, type: draft.type, stem: draft.stem, normStem: normalizeStem(draft.stem),
         options: draft.options, correct: draft.correct, explanation: draft.explanation,
-        difficulty: draft.difficulty, tags: draft.tags, imageUrl: draft.imageUrl
+        difficulty: draft.difficulty, tags: draft.tags, imageUrl: draft.imageUrl,
+        workspaceId: draft.workspaceId, creatorId: user.id
       }
     });
     await db.questionDraft.update({ where: { id: draft.id }, data: { status: "merged" } });
@@ -75,7 +92,7 @@ export async function POST(req: Request) {
     const created: string[] = [];
     for (const d of approved) {
       const q = (await db.question.create({
-        data: { topicId: d.topicId, type: d.type, stem: d.stem, normStem: normalizeStem(d.stem), options: d.options, correct: d.correct, explanation: d.explanation, difficulty: d.difficulty, tags: d.tags, imageUrl: d.imageUrl }
+        data: { topicId: d.topicId, type: d.type, stem: d.stem, normStem: normalizeStem(d.stem), options: d.options, correct: d.correct, explanation: d.explanation, difficulty: d.difficulty, tags: d.tags, imageUrl: d.imageUrl, workspaceId: wsIds[0], creatorId: user.id }
       }) as unknown as { id: string });
       await db.questionDraft.update({ where: { id: d.id }, data: { status: "merged" } });
       created.push(q.id);

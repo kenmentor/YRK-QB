@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,14 @@ import { toast } from "@/components/ui/toast";
 import { QuestionEditor, type QForm } from "@/components/question-editor";
 
 interface Draft { id: string; stem: string; status: string; type: string; options: string; correct: string; explanation: string; difficulty: string; authorId: string; topicId?: string; conflictBranch?: boolean; }
-interface Ws { id: string; name: string; focus: string; drafts: Draft[]; memberships: { userId: string; role: string; user: { email: string; name: string } | null }[]; }
+interface Ws {
+  id: string; name: string; focus: string; subjectId?: string;
+  destination?: { topic?: string; subject?: string; course?: string; session?: string };
+  drafts: Draft[]; memberships: { userId: string; role: string; user: { email: string; name: string } | null }[];
+}
+interface Progress { subjects: { id: string; name: string; topics: { id: string; name: string; draft: number; inReview: number; approved: number; published: number }[] }[]; note?: string; }
+interface BankQ { id: string; stem: string; type: string; difficulty: string; topicName: string; }
+interface JoinReq { id: string; role: string; message: string; status: string; user: { name: string; email: string } | null; }
 
 export default function WorkspaceDetail({ params }: { params: { id: string } }) {
   const [ws, setWs] = useState<Ws | null>(null);
@@ -16,11 +23,20 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
   const [tab, setTab] = useState<Record<string, string>>({});
   const [detail, setDetail] = useState<Record<string, { versions: { id: string; note: string; stem: string }[]; comments: { id: string; body: string }[]; reviews: { id: string; verdict: string; comment: string }[] }>>({});
   const [topics, setTopics] = useState<{ id: string; name: string; subject: string; exam: string }[]>([]);
+  const [progress, setProgress] = useState<Progress | null>(null);
+  const [bankQs, setBankQs] = useState<BankQ[]>([]);
+  const [joins, setJoins] = useState<JoinReq[]>([]);
+  const [showBank, setShowBank] = useState(false);
   const [inviteQ, setInviteQ] = useState("");
   const [suggest, setSuggest] = useState<{ id: string; name: string; email: string; role: string }[]>([]);
   const [inviteRole, setInviteRole] = useState("editor");
 
-  function load() { fetch(`/api/workspaces/${params.id}`).then((r) => r.json()).then(setWs); }
+  function load() {
+    fetch(`/api/workspaces/${params.id}`).then((r) => r.json()).then(setWs);
+    fetch(`/api/workspaces/${params.id}/progress`).then((r) => (r.ok ? r.json() : null)).then((d) => d && setProgress(d));
+    fetch(`/api/workspaces/${params.id}/published`).then((r) => (r.ok ? r.json() : [])).then(setBankQs);
+    fetch(`/api/workspaces/${params.id}/join`).then((r) => (r.ok ? r.json() : [])).then((d) => Array.isArray(d) && setJoins(d.filter((j: JoinReq) => j.status === "pending")));
+  }
   useEffect(load, [params.id]);
   useEffect(() => { fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.user)); }, []);
   useEffect(() => { fetch("/api/topics").then((r) => (r.ok ? r.json() : [])).then(setTopics); }, []);
@@ -137,6 +153,30 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     if (res.ok) load();
   }
 
+  // Revise a published bank question: opens a linked draft; merging it
+  // updates the canonical instead of duplicating.
+  async function revise(q: BankQ) {
+    const full = await fetch(`/api/bank/${q.id}`).then((r) => r.json());
+    const question = full.question;
+    const res = await fetch("/api/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      workspaceId: params.id, type: question.type, stem: question.stem,
+      options: JSON.parse(question.options || "[]"), correct: JSON.parse(question.correct || "[]"),
+      explanation: question.explanation, difficulty: question.difficulty, topicId: question.topicId ?? undefined,
+      revisionOf: q.id
+    }) });
+    const data = await res.json();
+    toast(res.ok ? "Revision draft opened, edit it below, then review and merge." : `Cannot revise: ${data.error}`);
+    if (res.ok) { setShowBank(false); load(); }
+  }
+
+  async function decideJoin(id: string, decision: "approve" | "decline") {
+    const message = decision === "decline" ? (prompt("Message to applicant? (optional)") ?? "") : "";
+    const res = await fetch(`/api/join-requests/${id}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision, message }) });
+    const data = await res.json();
+    toast(res.ok ? (decision === "approve" ? "Member added." : "Request declined.") : data.error);
+    if (res.ok) load();
+  }
+
   if (!ws) return <div className="text-sm text-slate-500">Loading space…</div>;
   return (
     <div className="grid gap-5">
@@ -176,6 +216,68 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
         {canMerge && <div className="mt-4 flex flex-wrap gap-2"><Button variant="accent" onClick={publishSet}>Publish approved set</Button><Button variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={deleteWorkspace}>Delete workspace</Button></div>}
         {myRole && !canMerge && <div className="mt-4"><Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" onClick={leave}>Leave workspace</Button></div>}
       </div>
+
+      {/* Where this workspace lands in the bank: session > course > subject > topic */}
+      <Card><CardHeader><CardTitle>Builds into the bank</CardTitle>
+        <CardDescription>
+          {[ws.destination?.session, ws.destination?.course, ws.destination?.subject, ws.destination?.topic].filter(Boolean).join("  ›  ") || "No destination yet, attach one so output lands in the right segment."}
+        </CardDescription></CardHeader>
+        <CardContent className="grid gap-2">
+          {(!progress || !progress.subjects.length) && <div className="text-sm text-slate-500">{progress?.note ?? "Loading build…"}</div>}
+          {(progress?.subjects ?? []).map((s) => (
+            <div key={s.id} className="rounded-xl border border-slate-100 p-3">
+              <div className="flex items-center justify-between text-sm"><span className="font-semibold">{s.name}</span>
+                <span className="flex items-center gap-2"><span className="text-xs text-slate-400">{s.topics.reduce((n, t) => n + t.published, 0)} in bank</span>
+                <a href={`/bank/subject/${s.id}`}><Button variant="ghost" size="sm">View subject</Button></a></span></div>
+              {s.topics.map((t) => {
+                const total = t.draft + t.inReview + t.approved + t.published;
+                const pct = total ? Math.round((t.published / total) * 100) : 0;
+                return (
+                  <div key={t.id} className="mt-2 text-[13px]">
+                    <div className="flex justify-between"><span>{t.name}</span><span className="text-slate-400">{t.published} bank · {t.inReview} review · {t.approved} ready · {t.draft} draft</span></div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} /></div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* What this workspace put in the bank, revisable from here */}
+      <Card><CardHeader>
+        <div className="flex items-center justify-between"><CardTitle>In the bank ({bankQs.length})</CardTitle>
+          <Button variant="ghost" size="sm" onClick={() => setShowBank((v) => !v)}>{showBank ? "Hide" : "Show"}</Button></div>
+        <CardDescription>Published from here. Revise opens a linked draft, merging updates the original.</CardDescription></CardHeader>
+        {showBank && <CardContent className="grid gap-2 text-sm">
+          {bankQs.map((q) => (
+            <div key={q.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 px-3.5 py-2.5">
+              <span className="min-w-0 flex-1 break-words">{q.stem}</span>
+              <Badge tone={q.difficulty}>{q.difficulty}</Badge>
+              {canEdit && <Button size="sm" variant="outline" onClick={() => revise(q)}>Revise</Button>}
+            </div>
+          ))}
+          {!bankQs.length && <div className="text-slate-500">Nothing published yet, approve and merge drafts above.</div>}
+        </CardContent>}
+      </Card>
+
+      {/* Join requests for owners */}
+      {canInvite && !!joins.length && (
+        <Card><CardHeader><CardTitle>Join requests ({joins.length})</CardTitle><CardDescription>People asking to become editor or reviewer.</CardDescription></CardHeader>
+          <CardContent className="grid gap-2 text-sm">
+            {joins.map((j) => (
+              <div key={j.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 px-3.5 py-2.5">
+                <span className="font-medium">{j.user?.name}</span><Badge>{j.role}</Badge>
+                <span className="text-slate-500">“{j.message}”</span>
+                <span className="ml-auto flex gap-2">
+                  <Button size="sm" onClick={() => decideJoin(j.id, "approve")}>Add</Button>
+                  <Button size="sm" variant="outline" onClick={() => decideJoin(j.id, "decline")}>Decline</Button>
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {canEdit ? (
         <QuestionEditor key={ws.drafts.length} topics={topics} submitLabel="Save draft" onSubmit={addDraft} />

@@ -17,7 +17,10 @@ export async function POST(req: Request) {
       topicId: body.topicId ?? null, type: body.type ?? "mcq",
       stem: body.stem ?? "", options: JSON.stringify(body.options ?? []),
       correct: JSON.stringify(body.correct ?? []), explanation: body.explanation ?? "",
-      difficulty: body.difficulty ?? "medium", tags: JSON.stringify(body.tags ?? [])
+      difficulty: body.difficulty ?? "medium", tags: JSON.stringify(body.tags ?? []),
+      // Revision loop: editing a published bank question starts a draft
+      // linked to it; merging updates the canonical instead of duplicating.
+      revisionOf: body.revisionOf ?? null
     }
   });
   await db.questionVersion.create({

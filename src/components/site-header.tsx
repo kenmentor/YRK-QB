@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Bell, Menu, X, LogOut, UserRound, ShieldCheck, ChevronRight } from "lucide-react";
+import { Bell, Menu, X, LogOut, UserRound, ShieldCheck, ChevronRight, FileCheck2 } from "lucide-react";
 
 const LINKS = [
   { href: "/workspaces", label: "Workspaces" },
@@ -115,6 +115,7 @@ export function SiteHeader() {
                       </div>
                       <div className="border-t border-slate-100 pt-1.5">
                         <a href="/profile" className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"><UserRound className="h-4 w-4" />Profile & progress</a>
+                        <a href="/contributions" className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"><FileCheck2 className="h-4 w-4" />My commits</a>
                         {isAdmin && <a href="/admin/reviews" className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"><ShieldCheck className="h-4 w-4" />Review inbox</a>}
                         <button onClick={logout} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"><LogOut className="h-4 w-4" />Logout</button>
                       </div>

@@ -17,6 +17,7 @@ export default function ContributePage({ params }: { params: { id: string } }) {
   const [note, setNote] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [pending, setPending] = useState<QForm | null>(null);
+  const [clears, setClears] = useState(0);
 
   useEffect(() => {
     fetch(`/api/subjects/${params.id}`).then((r) => r.json()).then((d) => {
@@ -41,8 +42,10 @@ export default function ContributePage({ params }: { params: { id: string } }) {
     const d = await res.json();
     if (!res.ok) { toast(d.error); setShowModal(false); return; }
     setShowModal(false);
-    toast("Committed for review, an admin will review and commit. Watch notifications.");
-    window.location.href = "/notifications";
+    setPending(null);
+    setNote("");
+    setClears((c) => c + 1);
+    toast("Committed, add another below or track it under My commits.");
   }
 
   if (!subject) return <div className="text-sm text-slate-500">Loading…</div>;
@@ -67,7 +70,8 @@ export default function ContributePage({ params }: { params: { id: string } }) {
           <label className="yrk-label">Note for the admin (optional)<Textarea placeholder="e.g. Verified against 2024 syllabus…" value={note} onChange={(e) => setNote(e.target.value)} /></label>
         </CardContent>
       </Card>
-      <QuestionEditor topics={topics} submitLabel="Review & commit…" onSubmit={onEditorSubmit} />
+      <QuestionEditor key={clears} topics={topics} submitLabel="Review & commit…" onSubmit={onEditorSubmit} />
+      <div className="flex justify-center"><a href="/contributions"><Button variant="ghost" size="sm">See my commits</Button></a></div>
 
       {showModal && pending && (
         <div className="yrk-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>

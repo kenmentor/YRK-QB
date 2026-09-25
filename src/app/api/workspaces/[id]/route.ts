@@ -27,7 +27,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
-  const ws = (await db.workspace.findUnique({ where: { id: params.id } }) as unknown as { id: string; name: string } | null);
+  const ws = (await db.workspace.findUnique({ where: { id: params.id } }) as unknown as {
+    id: string; name: string; examId?: string; subjectId?: string; topicId?: string; visibility?: string;
+  } | null);
   if (!ws) return NextResponse.json({ error: "Not found" }, { status: 404 });
   // Unreviewed drafts are private to the team.
   const role = await getMembership(user.id, params.id);
@@ -39,7 +41,62 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const u = (await db.user.findUnique({ where: { id: m.userId } }) as unknown as { email: string; name: string } | null);
     withUsers.push({ ...m, user: u });
   }
-  return NextResponse.json({ ...ws, drafts, memberships: withUsers });
+  // Resolve the bank destination path so the workspace shows where its
+  // output lands: topic > subject > course > session.
+  let destination: { topic?: string; subject?: string; course?: string; session?: string } = {};
+  if (ws.topicId) {
+    const t = (await db.topic.findUnique({ where: { id: ws.topicId } }) as unknown as { name: string; subjectId: string } | null);
+    if (t) {
+      destination.topic = t.name;
+      const s = (await db.subject.findUnique({ where: { id: t.subjectId } }) as unknown as { name: string; examId: string; id: string } | null);
+      if (s) {
+        destination.subject = s.name;
+        const e = (await db.exam.findUnique({ where: { id: s.examId } }) as unknown as { name: string; bodyId: string } | null);
+        if (e) {
+          destination.course = e.name;
+          const b = (await db.examBody.findUnique({ where: { id: e.bodyId } }) as unknown as { name: string } | null);
+          if (b) destination.session = b.name;
+        }
+      }
+    }
+  } else if (ws.subjectId) {
+    const s = (await db.subject.findUnique({ where: { id: ws.subjectId } }) as unknown as { name: string; examId: string } | null);
+    if (s) {
+      destination.subject = s.name;
+      const e = (await db.exam.findUnique({ where: { id: s.examId } }) as unknown as { name: string; bodyId: string } | null);
+      if (e) {
+        destination.course = e.name;
+        const b = (await db.examBody.findUnique({ where: { id: e.bodyId } }) as unknown as { name: string } | null);
+        if (b) destination.session = b.name;
+      }
+    }
+  } else if (ws.examId) {
+    const e = (await db.exam.findUnique({ where: { id: ws.examId } }) as unknown as { name: string; bodyId: string } | null);
+    if (e) {
+      destination.course = e.name;
+      const b = (await db.examBody.findUnique({ where: { id: e.bodyId } }) as unknown as { name: string } | null);
+      if (b) destination.session = b.name;
+    }
+  }
+  return NextResponse.json({ ...ws, drafts, memberships: withUsers, destination });
+}
+
+// Owner retargets the destination or flips visibility.
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const user = (await getAuthUser(req) as unknown as { id: string } | null);
+  if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
+  const role = await getMembership(user.id, params.id);
+  if (role !== "owner") return NextResponse.json({ error: "Only owners retarget" }, { status: 403 });
+  const body = await req.json();
+  const data: Record<string, unknown> = {};
+  if (body.name?.trim()) data.name = body.name.trim();
+  if (body.focus !== undefined) data.focus = body.focus;
+  if (body.examId !== undefined) data.examId = body.examId || null;
+  if (body.subjectId !== undefined) data.subjectId = body.subjectId || null;
+  if (body.topicId !== undefined) data.topicId = body.topicId || null;
+  if (body.visibility === "open" || body.visibility === "invite-only") data.visibility = body.visibility;
+  const updated = await db.workspace.update({ where: { id: params.id }, data });
+  return NextResponse.json(updated);
 }
 
 // Owner deletes the whole workspace (drafts, versions, comments, reviews,

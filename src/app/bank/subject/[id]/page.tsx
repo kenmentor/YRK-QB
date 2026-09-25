@@ -11,6 +11,8 @@ export default function SubjectPage({ params }: { params: { id: string } }) {
     subject: { id: string; name: string; description: string; course: string; session: string };
     topics: { id: string; name: string; description: string; questionCount: number; byType: Record<string, number> }[];
     questionCount: number;
+    builders: { id: string; name: string; memberCount: number }[];
+    privateCrews: number;
   } | null>(null);
   useEffect(() => { fetch(`/api/subjects/${params.id}`).then((r) => r.json()).then(setD); }, [params.id]);
   if (!d) return <div className="text-sm text-slate-500">Loading subject…</div>;
@@ -23,6 +25,14 @@ export default function SubjectPage({ params }: { params: { id: string } }) {
           <a href={`/bank/subject/${d.subject.id}/contribute`} className="w-full sm:w-auto"><Button variant="secondary" size="lg" className="w-full sm:w-auto"><PlusCircle className="h-4 w-4" /> Contribute a question</Button></a>
         </>} tone="dark" />
       <a href="/bank" className="w-fit"><Button variant="ghost" size="sm"><ArrowLeft className="h-3.5 w-3.5" /> All subjects</Button></a>
+      {(!!d.builders.length || !!d.privateCrews) && (
+        <Card><CardHeader><CardTitle>Built by crews</CardTitle><CardDescription>Workspaces feeding this subject{d.privateCrews ? `, plus ${d.privateCrews} private ${d.privateCrews === 1 ? "crew" : "crews"}` : ""}.</CardDescription></CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {d.builders.map((b) => <span key={b.id} className="rounded-full bg-slate-100 px-3 py-1.5 text-[13px] font-medium">{b.name} · {b.memberCount}</span>)}
+            <a href="/workspaces" className="ml-auto"><Button variant="outline" size="sm">Join a crew</Button></a>
+          </CardContent>
+        </Card>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
         {d.topics.map((t) => (
           <Card key={t.id}><CardHeader><CardTitle className="text-[15px]">{t.name}</CardTitle><CardDescription>{t.description || `${t.questionCount} questions`}</CardDescription></CardHeader>

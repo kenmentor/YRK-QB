@@ -31,6 +31,12 @@ export async function POST(req: Request) {
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
   const body = await req.json();
   if (!body.name?.trim()) return NextResponse.json({ error: "Name required" }, { status: 422 });
+  for (const [key, model] of [["examId", "exam"], ["subjectId", "subject"], ["topicId", "topic"]] as const) {
+    if (body[key]) {
+      const found = await (db[model] as { findUnique: (a: unknown) => Promise<unknown> }).findUnique({ where: { id: body[key] } });
+      if (!found) return NextResponse.json({ error: `Unknown ${key}` }, { status: 422 });
+    }
+  }
   const ws = await db.workspace.create({
     data: {
       name: body.name.trim(), focus: body.focus ?? "",

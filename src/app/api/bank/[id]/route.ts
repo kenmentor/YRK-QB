@@ -27,10 +27,14 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const user = (await getAuthUser(req) as unknown as { id: string; role: string } | null);
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
-  const q = (await db.question.findUnique({ where: { id: params.id } }) as unknown as { creatorId?: string } | null);
+  const q = (await db.question.findUnique({ where: { id: params.id } }) as unknown as { creatorId?: string; editorIds?: string } | null);
   if (!q) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const { allowApplications } = await req.json();
   const me = (await db.user.findUnique({ where: { id: user.id } }) as unknown as { role: string });
+  // Creators, approved editors, and admins. editorIds is granted by the
+  // edit-application flow, so approving someone must actually empower them.
+  let isEditor = false;
+  try { isEditor = (JSON.parse(q.editorIds ?? "[]") as string[]).includes(user.id); } catch { /* corrupt list = no access */ }
   // Unclaimed legacy questions can only be claimed by admins, otherwise
   // the first visitor to find one would own it.
   if (!q.creatorId) {
@@ -38,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     const updated = await db.question.update({ where: { id: params.id }, data: { creatorId: user.id, allowApplications: !!allowApplications } });
     return NextResponse.json(updated);
   }
-  if (q.creatorId !== user.id && me?.role !== "admin") return NextResponse.json({ error: "Only the creator can change appliable" }, { status: 403 });
+  if (q.creatorId !== user.id && !isEditor && me?.role !== "admin") return NextResponse.json({ error: "Only the creator can change appliable" }, { status: 403 });
   const updated = await db.question.update({ where: { id: params.id }, data: { allowApplications: !!allowApplications } });
   return NextResponse.json(updated);
 }

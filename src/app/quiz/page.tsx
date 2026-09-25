@@ -7,8 +7,9 @@ import { PageHero } from "@/components/page-hero";
 import { toast } from "@/components/ui/toast";
 import { CheckCircle2, XCircle, Flag, Timer, ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 
-interface Q { id: string; stem: string; options: string; correct: string; explanation: string; difficulty: string; type: string; }
+interface Q { id: string; stem: string; options: string; correct?: string; explanation?: string; difficulty: string; type: string; }
 interface Topic { id: string; name: string; subject: string; exam: string; }
+interface Breakdown { questionId: string; stem: string; given: string[]; correctAnswers: string[]; explanation: string; ok: boolean; type: string; }
 type Phase = "setup" | "running" | "results";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -32,9 +33,10 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [flagged, setFlagged] = useState<Record<string, boolean>>({});
   const [seconds, setSeconds] = useState(600);
-  const [result, setResult] = useState<{ score: number; total: number; wrongIds: string[]; late?: boolean } | null>(null);
+  const [result, setResult] = useState<{ score: number; total: number; wrongIds: string[]; late?: boolean; breakdown?: Breakdown[] } | null>(null);
   const [error, setError] = useState("");
   const [startedAt, setStartedAt] = useState(0);
+  const [ticket, setTicket] = useState("");
 
   useEffect(() => { fetch("/api/topics").then((r) => r.json()).then(setTopics).catch(() => {}); }, []);
   useEffect(() => {
@@ -50,12 +52,27 @@ export default function QuizPage() {
 
   const cur = items[idx];
   const opts: string[] = useMemo(() => (cur ? (JSON.parse(cur.options) as string[]) : []), [cur]);
-  const correct: string[] = useMemo(() => (cur ? (JSON.parse(cur.correct) as string[]) : []), [cur]);
+  // Exam items arrive stripped (no correct/answers); practice items are full.
+  const correct: string[] = useMemo(() => (cur?.correct ? (JSON.parse(cur.correct) as string[]) : []), [cur]);
   const picked: string[] = cur ? (answers[cur.id] ?? []) : [];
   const progress = items.length ? Math.round((Object.keys(answers).length / items.length) * 100) : 0;
 
   async function start() {
     setError("");
+    if (mode === "exam") {
+      // Server picks + freezes the snapshot and signs the clock. Answers
+      // stay server-side until grading.
+      const res = await fetch("/api/quiz/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topicId: topicId || undefined, subjectId: subjectId || undefined, count, minutes }) });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Could not start exam"); return; }
+      setItems(data.items);
+      setTicket(data.ticket);
+      setIdx(0); setAnswers({}); setFlagged({}); setResult(null);
+      setSeconds(data.durationSecs);
+      setStartedAt(data.startedAt);
+      setPhase("running");
+      return;
+    }
     const params = new URLSearchParams();
     if (topicId) params.set("topicId", topicId);
     else if (subjectId) params.set("subjectId", subjectId);
@@ -66,7 +83,7 @@ export default function QuizPage() {
     all = shuffle(all).slice(0, Math.max(1, Math.min(count, all.length || count)));
     if (!all.length) { setError("No questions for this filter, try All topics"); return; }
     setItems(all); // snapshot frozen
-    setIdx(0); setAnswers({}); setFlagged({}); setResult(null);
+    setIdx(0); setAnswers({}); setFlagged({}); setResult(null); setTicket("");
     setSeconds(minutes * 60);
     setStartedAt(Date.now());
     setPhase("running");
@@ -99,34 +116,42 @@ export default function QuizPage() {
   }
 
   function isCorrect(q: Q, given: string[]): boolean {
-    const c = JSON.parse(q.correct) as string[];
+    const c = q.correct ? (JSON.parse(q.correct) as string[]) : [];
     if (q.type === "essay" || q.type === "short_answer") return given.join(" ").trim().length >= 3;
     if (q.type === "fill_in") {
+      if (!c.length) return given.join("").trim().length > 0;
       if (given.length !== c.length) return false;
       return c.every((x, i) => ((given[i] ?? "").trim().toLowerCase() === x.trim().toLowerCase()));
     }
+    if (!c.length) return false;
     return [...given].sort().join("|").toLowerCase() === [...c].sort().join("|").toLowerCase();
   }
 
   async function submitAll(auto = false) {
     // Whole snapshot goes: server grades every snapshotted question so
-    // blanks count as wrong, and enforces the filter + exam clock.
+    // blanks count as wrong. Exam mode additionally sends the signed
+    // ticket (server snapshot + clock); practice sends its own snapshot.
     const payload = items.map((q) => ({ questionId: q.id, given: answers[q.id] ?? [] }));
-    const res = await fetch("/api/quiz/attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode, topicId, subjectId, questionIds: items.map((q) => q.id), answers: payload, startedAt, durationSecs: mode === "exam" ? minutes * 60 : undefined }) });
+    const body = mode === "exam"
+      ? { mode, ticket, answers: payload }
+      : { mode, topicId, subjectId, questionIds: items.map((q) => q.id), answers: payload };
+    const res = await fetch("/api/quiz/attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.status === 401) { window.location.href = "/login"; return; }
+    if (res.status === 400) { const d = await res.json(); setError(d.error ?? "Submit rejected, restart the round."); setPhase("setup"); return; }
     const data = await res.json();
-    // per-question wrong ids for review + retry
-    const wrongIds: string[] = [];
-    for (const q of items) {
-      if (!isCorrect(q, answers[q.id] ?? [])) wrongIds.push(q.id);
-    }
+    const bd = (data.breakdown ?? []) as Breakdown[];
+    const wrongIds = bd.length ? bd.filter((b) => !b.ok).map((b) => b.questionId) : items.filter((q) => !isCorrect(q, answers[q.id] ?? [])).map((q) => q.id);
     void auto;
-    setResult({ score: data.score ?? 0, total: items.length, wrongIds, late: data.late });
+    void startedAt;
+    setResult({ score: data.score ?? 0, total: items.length, wrongIds, late: data.late, breakdown: bd.length ? bd : undefined });
     if (data.late) toast("Submitted after time, scored zero. The clock is server-side.");
     setPhase("results");
   }
 
   function retryWrong() {
+    // Exam rounds are ticket-bound: retrying a subset would void the ticket,
+    // so exams restart fresh while practice retries just the misses.
+    if (mode === "exam") { start(); return; }
     const wrong = items.filter((q) => result?.wrongIds.includes(q.id));
     if (!wrong.length) return;
     setItems(wrong); setIdx(0); setAnswers({}); setFlagged({}); setResult(null);
@@ -163,21 +188,23 @@ export default function QuizPage() {
   }
 
   if (phase === "results" && result) {
+    const rows: Breakdown[] = result.breakdown ?? items.map((q) => {
+      const g = answers[q.id] ?? [];
+      const c = q.correct ? (JSON.parse(q.correct) as string[]) : [];
+      return { questionId: q.id, stem: q.stem, given: g, correctAnswers: c, explanation: q.explanation ?? "", ok: isCorrect(q, g), type: q.type };
+    });
     return (
       <div className="grid gap-4">
         <PageHero eyebrow={mode === "exam" ? "Mock complete" : "Practice complete"} title={`${result.score}/${result.total} · ${result.total ? Math.round((result.score / result.total) * 100) : 0}%`} description={result.wrongIds.length ? `${result.wrongIds.length} to review, retry just the misses or check history.` : "Clean sweep. New segment or harder mix next."}
           actions={<><Button variant="outline" onClick={() => setPhase("setup")} className="w-full border-white/20 text-white hover:bg-white/10 hover:text-white sm:w-auto">New setup</Button>{result.wrongIds.length > 0 && <Button variant="accent" className="w-full sm:w-auto" onClick={retryWrong}><RotateCcw className="h-4 w-4" /> Retry {result.wrongIds.length} wrong</Button>}<a href="/quiz/history" className="w-full sm:w-auto"><Button variant="secondary" className="w-full sm:w-auto">History</Button></a></>} tone="dark" />
-        {items.map((q, i) => {
-          const g = answers[q.id] ?? [];
-          const ok = isCorrect(q, g);
-          const c = JSON.parse(q.correct) as string[];
-          const isT = q.type === "essay" || q.type === "short_answer";
+        {rows.map((b, i) => {
+          const isT = b.type === "essay" || b.type === "short_answer";
           return (
-            <Card key={q.id} className={ok ? "border-green-200" : "border-red-200"}>
+            <Card key={b.questionId} className={b.ok ? "border-green-200" : "border-red-200"}>
               <CardContent className="yrk-wrap p-4 text-sm">
-                <div className="flex items-start gap-2 font-medium">{ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />}<span className="min-w-0">Q{i + 1}. {q.stem}</span></div>
-                <div className="mt-1 text-slate-500">{isT ? `Your answer: ${g.join(" ").slice(0, 200) || "(blank)"}` : `You: ${g.join(", ") || "(blank)"} · Answer: ${c.join(", ")}`}</div>
-                <div className="mt-1">{isT ? `Marking guide: ${q.explanation}` : q.explanation}</div>
+                <div className="flex items-start gap-2 font-medium">{b.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />}<span className="min-w-0">Q{i + 1}. {b.stem}</span></div>
+                <div className="mt-1 text-slate-500">{isT ? `Your answer: ${b.given.join(" ").slice(0, 200) || "(blank)"}` : `You: ${b.given.join(", ") || "(blank)"} · Answer: ${b.correctAnswers.join(", ")}`}</div>
+                <div className="mt-1">{isT ? `Marking guide: ${b.explanation}` : b.explanation}</div>
               </CardContent>
             </Card>
           );

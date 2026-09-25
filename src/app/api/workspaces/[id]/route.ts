@@ -91,9 +91,28 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const data: Record<string, unknown> = {};
   if (body.name?.trim()) data.name = body.name.trim();
   if (body.focus !== undefined) data.focus = body.focus;
-  if (body.examId !== undefined) data.examId = body.examId || null;
-  if (body.subjectId !== undefined) data.subjectId = body.subjectId || null;
-  if (body.topicId !== undefined) data.topicId = body.topicId || null;
+  // Destination ids must exist, otherwise the workspace points nowhere.
+  if (body.examId !== undefined) {
+    if (body.examId) {
+      const e = await db.exam.findUnique({ where: { id: body.examId } });
+      if (!e) return NextResponse.json({ error: "Unknown course" }, { status: 422 });
+    }
+    data.examId = body.examId || null;
+  }
+  if (body.subjectId !== undefined) {
+    if (body.subjectId) {
+      const s = await db.subject.findUnique({ where: { id: body.subjectId } });
+      if (!s) return NextResponse.json({ error: "Unknown subject" }, { status: 422 });
+    }
+    data.subjectId = body.subjectId || null;
+  }
+  if (body.topicId !== undefined) {
+    if (body.topicId) {
+      const t = await db.topic.findUnique({ where: { id: body.topicId } });
+      if (!t) return NextResponse.json({ error: "Unknown topic" }, { status: 422 });
+    }
+    data.topicId = body.topicId || null;
+  }
   if (body.visibility === "open" || body.visibility === "invite-only") data.visibility = body.visibility;
   const updated = await db.workspace.update({ where: { id: params.id }, data });
   return NextResponse.json(updated);

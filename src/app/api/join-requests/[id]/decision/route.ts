@@ -21,7 +21,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const ws = (await db.workspace.findUnique({ where: { id: jr.workspaceId } }) as unknown as { name: string } | null);
 
   if (decision === "approve") {
-    await db.membership.create({ data: { userId: jr.userId, workspaceId: jr.workspaceId, role: jr.role } });
+    const existing = await db.membership.findFirst({ where: { userId: jr.userId, workspaceId: jr.workspaceId } });
+    if (!existing) {
+      await db.membership.create({ data: { userId: jr.userId, workspaceId: jr.workspaceId, role: jr.role } });
+    }
     await db.joinRequest.update({ where: { id: jr.id }, data: { status: "approved" } });
     await db.notification.create({
       data: { userId: jr.userId, kind: "decision", title: `Joined ${ws?.name ?? "workspace"}`, body: message?.trim() ? `Owner approved you as ${jr.role}. Message: ${message}` : `Owner approved you as ${jr.role}. Welcome in!`, link: `/workspaces/${jr.workspaceId}`, read: false }

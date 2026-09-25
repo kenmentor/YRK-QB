@@ -108,6 +108,7 @@ describe("access, queue, quiz, misc", () => {
     const m = read("src/app/api/merges/route.ts");
     assert.ok(m.includes("revisionOf"), "revision drafts update canonical");
     assert.ok(m.includes("workspaceId: draft.workspaceId"), "publishes stamp origin");
+    assert.ok(m.includes("merged away, revise its canonical"), "dead aliases not revised");
     const d = read("src/app/api/drafts/route.ts");
     assert.ok(d.includes("revisionOf"), "drafts accept revision link");
     assert.ok(fs.existsSync(path.join(root, "src/app/api/workspaces/[id]/progress/route.ts")), "course-builder progress exists");
@@ -119,5 +120,22 @@ describe("access, queue, quiz, misc", () => {
     assert.ok(fs.existsSync(path.join(root, "src/app/api/proposals/[id]/route.ts")), "proposal edit/withdraw exists");
     const w = read("src/app/api/workspaces/route.ts");
     assert.ok(w.includes("myRole"), "directory exposes per-workspace role");
+    assert.ok(w.includes("Unknown"), "destination ids validated");
+  });
+  it("round two: exam tickets, gated drafts, owned notifications, live checks", () => {
+    assert.ok(fs.existsSync(path.join(root, "src/app/api/quiz/start/route.ts")), "exam start endpoint exists");
+    const s = read("src/app/api/quiz/start/route.ts");
+    assert.ok(s.includes("stay on the server") || s.includes("Answers"), "answers stripped for exams");
+    const a = read("src/app/api/quiz/attempts/route.ts");
+    assert.ok(a.includes("signed ticket") || a.includes("verifyTicket"), "exam submits need tickets");
+    const d = read("src/app/api/drafts/route.ts");
+    assert.ok(d.includes("Login required"), "drafts list needs login");
+    assert.ok(d.includes("only drafts from my own workspaces") || d.includes("my own workspaces"), "no global draft dump");
+    const n = read("src/app/api/notifications/route.ts");
+    assert.ok(n.includes("n.userId !== user.id"), "read-own-only notifications");
+    const p = read("src/app/api/proposals/[id]/route.ts");
+    assert.ok(p.includes("Edits must stay valid"), "proposal edits validated");
+    const b = read("src/app/api/bank/[id]/route.ts");
+    assert.ok(b.includes("isEditor"), "approved editors empowered");
   });
 });

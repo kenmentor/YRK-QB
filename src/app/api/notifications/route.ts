@@ -16,8 +16,11 @@ export async function POST(req: Request) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
   const { id } = await req.json();
-  if (id) await db.notification.update({ where: { id }, data: { read: true } });
-  else {
+  if (id) {
+    const n = (await db.notification.findUnique({ where: { id } }) as unknown as { userId: string } | null);
+    if (!n || n.userId !== user.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    await db.notification.update({ where: { id }, data: { read: true } });
+  } else {
     const all = (await db.notification.findMany({ where: { userId: user.id } }) as unknown as { id: string }[]);
     for (const n of all) await db.notification.update({ where: { id: n.id }, data: { read: true } });
   }

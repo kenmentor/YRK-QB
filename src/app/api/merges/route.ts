@@ -27,9 +27,11 @@ export async function POST(req: Request) {
     const dup = (await db.question.findFirst({ where: { normStem: normalizeStem(draft.stem) } }) as unknown as { id: string; mergedIntoId?: string } | null);
     const liveDup = dup && !dup.mergedIntoId && dup.id !== draft.revisionOf ? dup : null;
     // Revision: update the canonical question in place (origin preserved).
+    // Dead aliases can't be revised, they'd update invisible questions.
     if (draft.revisionOf) {
-      const target = await db.question.findUnique({ where: { id: draft.revisionOf } });
+      const target = (await db.question.findUnique({ where: { id: draft.revisionOf } }) as unknown as { mergedIntoId?: string } | null);
       if (!target) return NextResponse.json({ error: "Original question gone" }, { status: 404 });
+      if (target.mergedIntoId) return NextResponse.json({ error: "Original was merged away, revise its canonical instead" }, { status: 409 });
       const question = await db.question.update({
         where: { id: draft.revisionOf },
         data: {

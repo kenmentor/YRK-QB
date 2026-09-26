@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { isBankQuestion } from "@/lib/shape";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   // owner-only, and Play practice/self-test needs answers client-side.
   const ids = parseIds(s.questionIds);
   const live = ids.length
-    ? (await db.question.findMany({ where: { id: { in: ids }, mergedIntoId: null } }) as unknown as { id: string; stem: string; type: string; difficulty: string; options: string; correct: string; parts?: string; explanation: string }[])
+    ? ((await db.question.findMany({ where: { id: { in: ids }, mergedIntoId: null } }) as unknown as { id: string; stem: string; type: string; difficulty: string; options: string; correct: string; parts?: string; explanation: string }[])).filter(isBankQuestion)
     : [];
   const byId = new Map(live.map((q) => [q.id, q]));
   const questions = ids.map((id) => byId.get(id) ?? { id, stem: "(removed from bank)", type: "missing", difficulty: "—" });

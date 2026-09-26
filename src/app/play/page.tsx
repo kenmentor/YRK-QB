@@ -409,9 +409,9 @@ export default function QuizPage() {
       <div className="sticky top-16 z-20 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-soft backdrop-blur">
         <div className="flex items-center gap-2 px-3 py-2">
           <button title="Exit round" onClick={exitRound} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X className="h-4 w-4" /></button>
-          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
-            {MODE_LABEL[mode]} <span className="font-normal text-slate-400">· Q{idx + 1}/{items.length} · {cur.type.replace(/_/g, " ")} · {cur.difficulty}</span>
-          </span>
+            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">
+              {MODE_LABEL[mode]} <span className="font-normal text-slate-400">· Q{idx + 1}/{items.length} · {(cur.type ?? "").replace(/_/g, " ")} · {cur.difficulty}</span>
+            </span>
           {flagged[cur.id] && <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800"><Flag className="h-3 w-3" />Flagged</span>}
           {mode !== "practice" && (
             <span className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold tabular-nums ${lowTime ? "bg-red-50 text-red-700" : "bg-slate-900 text-white"}`}>
@@ -524,7 +524,7 @@ export default function QuizPage() {
             )}
             {isFill && (
               <div className="grid gap-2 rounded-xl bg-slate-50 p-3 text-[15px] leading-loose">
-                {cur.stem.split("___").map((part, i, arr) => (
+                {(cur.stem ?? "").split("___").map((part, i, arr) => (
                   <span key={i}>
                     {part}
                     {i < arr.length - 1 && (

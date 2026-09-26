@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { getFolderAccess, type FolderDoc } from "@/lib/share";
+import { isBankFolder, isBankQuestion } from "@/lib/shape";
 
 export const dynamic = "force-dynamic";
 
@@ -65,11 +66,11 @@ export async function GET(req: Request) {
     if (depth > 6 || count > 500) return null;
     const f = (await db.folder.findUnique({ where: { id: fid } }) as unknown as FolderDoc | null);
     if (!f || f.ownerId !== root!.ownerId) return null;
-    const kids = (await db.folder.findMany({ where: { ownerId: f.ownerId, parentId: fid }, take: 200, orderBy: { createdAt: "asc" } }) as unknown as FolderDoc[]);
-    const docs = (await db.question.findMany({ where: { folderId: fid, mergedIntoId: null }, take: 500, orderBy: { createdAt: "asc" } }) as unknown as {
+    const kids = ((await db.folder.findMany({ where: { ownerId: f.ownerId, parentId: fid }, take: 200, orderBy: { createdAt: "asc" } }) as unknown as FolderDoc[])).filter(isBankFolder);
+    const docs = ((await db.question.findMany({ where: { folderId: fid, mergedIntoId: null }, take: 500, orderBy: { createdAt: "asc" } }) as unknown as {
       type: string; stem: string; options: string; correct: string; parts?: string; explanation: string;
       difficultyIndex?: number; difficulty: string; category?: string; sector?: string; tags?: string; mediaUrl?: string; topicId?: string;
-    }[]);
+    }[])).filter(isBankQuestion);
     const questions: BundleQuestion[] = [];
     for (const qd of docs) {
       if (count++ > 500) break;

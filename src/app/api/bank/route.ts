@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { isBankQuestion } from "@/lib/shape";
 
 export const dynamic = "force-dynamic";
 
@@ -52,5 +53,5 @@ export async function GET(req: Request) {
   if (q) where.stem = { contains: q };
 
   const questions = await db.question.findMany({ where, take, skip, orderBy: { createdAt: "desc" } });
-  return NextResponse.json(questions);
+  return NextResponse.json((questions as unknown[]).filter(isBankQuestion));
 }

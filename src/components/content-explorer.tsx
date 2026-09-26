@@ -99,7 +99,7 @@ export function ContentExplorer({ open, exclude, onAdd, onClose }: {
 
   const needle = q.trim().toLowerCase();
   const showFolders = folders.filter((f) => !needle || f.name.toLowerCase().includes(needle));
-  const showFiles = files.filter((f) => !needle || f.stem.toLowerCase().includes(needle));
+  const showFiles = files.filter((f) => !needle || (f.stem ?? "").toLowerCase().includes(needle));
   const showRoots = roots.filter((r) => !needle || r.name.toLowerCase().includes(needle));
 
   function checkRow(kind: "q" | "f", id: string, name: string, sub: string, extra?: Partial<PickedRef>) {

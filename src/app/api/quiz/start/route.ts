@@ -4,6 +4,7 @@ import { getAuthUser } from "@/lib/auth";
 import { rateLimited } from "@/lib/ratelimit";
 import { signTicket } from "@/lib/exam-token";
 import { canViewActivity, resolveActivity, type ActivityDoc } from "@/lib/activity";
+import { isBankQuestion } from "@/lib/shape";
 
 export const dynamic = "force-dynamic";
 
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
   }
   const where: Record<string, unknown> = { mergedIntoId: null };
   if (topicIds) where.topicId = { in: topicIds.length ? topicIds : ["__none__"] };
-  const pool = (await db.question.findMany({ where, take: 500 }) as unknown as { id: string }[]);
+  const pool = ((await db.question.findMany({ where, take: 500 }) as unknown as { id: string }[])).filter(isBankQuestion);
   if (!pool.length) return NextResponse.json({ error: "No questions for this filter" }, { status: 400 });
 
   // Shuffle + slice server-side so the client can't cherry-pick.

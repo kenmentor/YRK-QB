@@ -43,7 +43,7 @@ export function QuestionView({ q, canEdit, onEdit, onClose }: {
 
   function renderBody() {
     if (q.type === "fill_in") {
-      const segs = q.stem.split("___");
+      const segs = (q.stem ?? "").split("___");
       return (
         <p className="text-[15px] leading-relaxed text-slate-800">
           {segs.map((p, i) => (
@@ -132,7 +132,7 @@ export function QuestionView({ q, canEdit, onEdit, onClose }: {
         <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-3.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50"><Icon className="h-4.5 w-4.5 text-indigo-600" /></span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{(TYPE_LABEL as Record<string, string>)[q.type] ?? q.type} · {q.difficultyIndex ? `${q.difficultyIndex}/5 · ` : ""}{q.difficulty}</div>
+            <div className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{(TYPE_LABEL as Record<string, string>)[q.type ?? ""] ?? q.type ?? "Question"} · {q.difficultyIndex ? `${q.difficultyIndex}/5 · ` : ""}{q.difficulty}</div>
           </div>
           {canEdit && (
             <Button size="sm" variant="ghost" onClick={onEdit} title="Edit question" className="text-slate-500 hover:text-indigo-700">

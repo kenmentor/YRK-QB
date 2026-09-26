@@ -76,8 +76,9 @@ const TYPE_SHORT: Record<string, string> = {
   msf: "MSF", viva: "Viva",
 };
 
-export function typeLabel(type: string) {
-  return TYPE_SHORT[type] ?? type.replace(/_/g, " ");
+export function typeLabel(type: string | undefined | null) {
+  if (!type) return "Question";
+  return TYPE_SHORT[type] ?? String(type).replace(/_/g, " ");
 }
 
 export function fmtDate(iso?: string) {

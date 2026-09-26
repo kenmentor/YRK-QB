@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { getFolderAccess, type FolderDoc } from "@/lib/share";
+import { isBankFolder, isBankQuestion } from "@/lib/shape";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ export async function GET(req: Request) {
     where: folderId ? { ownerId: bankOwner, parentId: folderId } : { ownerId: bankOwner, parentId: null },
     take: 500,
     orderBy: { createdAt: "asc" },
-  }) as unknown as { id: string; name: string; createdAt?: string; isPublic?: boolean }[]);
+  }) as unknown as { id: string; name: string; createdAt?: string; isPublic?: boolean }[]).filter((f): f is { id: string; name: string; createdAt?: string; isPublic?: boolean } => isBankFolder(f));
   // Public viewers (no grant) only see public subfolders.
   const visibleFolders = !viaShare
     ? folders.filter((f) => f.isPublic)
@@ -83,7 +84,7 @@ export async function GET(req: Request) {
     where: { mergedIntoId: null, folderId },
     take: 500,
     orderBy: { createdAt: "desc" },
-  }) as unknown as { id: string; creatorId?: string; folderId?: string | null }[]);
+  }) as unknown as { id: string; creatorId?: string; folderId?: string | null }[]).filter(isBankQuestion);
 
   // Breadcrumb trail root → current (within the viewed bank).
   const breadcrumbs: { id: string | null; name: string; ownerId: string }[] = [

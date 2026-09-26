@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { gradeAnswer, isRubricType, rubricTotal, rubricOk } from "@/lib/lifecycle";
 import { parseParts, matchAny } from "@/lib/validation";
+import { isBankQuestion, safeArr } from "@/lib/shape";
 import { verifyTicket } from "@/lib/exam-token";
 
 export const dynamic = "force-dynamic";
@@ -59,9 +60,9 @@ export async function POST(req: Request) {
   const breakdown: { questionId: string; stem: string; given: string[]; correctAnswers: string[]; explanation: string; ok: boolean; type: string; parts?: { stem: string; given: string[]; expected: string[]; ok: boolean }[] }[] = [];
   for (const qid of snapshotIds) {
     const q = byId.get(qid);
-    if (!q) continue;
+    if (!q || !isBankQuestion(q)) continue;
     const given = givenById.get(qid) ?? [];
-    const correctArr = JSON.parse(q.correct) as string[];
+    const correctArr = safeArr((q as { correct?: unknown }).correct);
     const parts = parseParts((q as { parts?: string }).parts);
 
     // Rubric formats are scored by hand (self/peer in v1): clamp + ok at half.

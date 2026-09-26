@@ -290,4 +290,16 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     const grid = read("src/components/drive-grid.tsx");
     assert.ok(grid.includes("min-h-[44px]"), "44px rows present");
   });
+
+  it("foreign-doc hardening: shape filter + null-safe reads", () => {
+    assert.ok(fs.existsSync(path.join(root, "src/lib/shape.ts")), "shape guards present");
+    for (const f of ["src/app/api/drive/contents/route.ts", "src/app/api/bank/route.ts", "src/app/api/quiz/start/route.ts", "src/app/api/quiz/attempts/route.ts"]) {
+      assert.ok(read(f).includes("isBankQuestion"), `${f} filters shapes`);
+    }
+    const grid = read("src/components/drive-grid.tsx");
+    assert.ok(grid.includes("if (!type) return"), "typeLabel null-safe");
+    const play = read("src/app/play/page.tsx");
+    assert.ok(play.includes("(cur.type ??") || play.includes("cur.type ??"), "runner type null-safe");
+    assert.ok(play.includes("(cur.stem ??"), "runner stem null-safe");
+  });
 });

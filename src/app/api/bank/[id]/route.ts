@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { isBankQuestion } from "@/lib/shape";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     difficulty: string; type: string; creatorId?: string; allowApplications?: boolean; editorIds?: string;
   } | null);
   if (!q || (q as { mergedIntoId?: string }).mergedIntoId) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!isBankQuestion(q)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   let creator = null;
   if (q.creatorId) creator = await db.user.findUnique({ where: { id: q.creatorId } });
   let editors: { id: string; name: string; email: string }[] = [];

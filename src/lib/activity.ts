@@ -1,5 +1,5 @@
 import { db } from "./db";
-
+import { isBankQuestion } from "./shape";
 export const ACTIVITY_MODES = ["practice", "selftest", "exam"] as const;
 export type ActivityMode = (typeof ACTIVITY_MODES)[number];
 
@@ -133,7 +133,7 @@ export async function resolveActivity(userId: string, a: ActivityDoc): Promise<{
       skipped += probe.length || 1;
       return;
     }
-    const qs = (await db.question.findMany({ where: { folderId: fid, mergedIntoId: null }, take: 200, orderBy: { createdAt: "asc" } }) as unknown as ResolvedQ[]);
+    const qs = ((await db.question.findMany({ where: { folderId: fid, mergedIntoId: null }, take: 200, orderBy: { createdAt: "asc" } }) as unknown as ResolvedQ[])).filter(isBankQuestion);
     for (const q of qs) {
       if (!seen.has(q.id)) { seen.add(q.id); items.push(q); }
     }
@@ -144,7 +144,7 @@ export async function resolveActivity(userId: string, a: ActivityDoc): Promise<{
       if (ref.kind === "q") {
         if (seen.has(ref.id)) continue;
         const q = (await db.question.findUnique({ where: { id: ref.id } }) as unknown as (ResolvedQ & { mergedIntoId?: string }) | null);
-        if (q && !q.mergedIntoId) { seen.add(ref.id); items.push(q); }
+        if (q && !q.mergedIntoId && isBankQuestion(q)) { seen.add(ref.id); items.push(q); }
         else skipped++;
       } else {
         const f = (await db.folder.findUnique({ where: { id: ref.id } }) as unknown as { id: string } | null);
@@ -160,7 +160,7 @@ export async function resolveActivity(userId: string, a: ActivityDoc): Promise<{
   const fIds = Array.from(new Set(strArr(a.folderIds)));
 
   if (qIds.length) {
-    const live = (await db.question.findMany({ where: { id: { in: qIds }, mergedIntoId: null } }) as unknown as ResolvedQ[]);
+    const live = ((await db.question.findMany({ where: { id: { in: qIds }, mergedIntoId: null } }) as unknown as ResolvedQ[])).filter(isBankQuestion);
     const byId = new Map(live.map((q) => [q.id, q]));
     for (const id of qIds) {
       const q = byId.get(id);

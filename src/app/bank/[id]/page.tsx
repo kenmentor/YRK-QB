@@ -56,7 +56,7 @@ export default function BankDetail({ params }: { params: { id: string } }) {
   return (
     <div className="grid gap-5">
       <PageHero eyebrow={q.allowApplications ? "Open for editors" : "Bank question"} title={q.stem}
-        description={`${q.type.replace("_", " ")} · ${q.difficulty} · by ${data.creator?.name ?? "unclaimed"}${data.editors.length ? ` · editors: ${data.editors.map((e) => e.name).join(", ")}` : ""}`} />
+        description={`${(q.type ?? "").replace("_", " ")} · ${q.difficulty} · by ${data.creator?.name ?? "unclaimed"}${data.editors.length ? ` · editors: ${data.editors.map((e) => e.name).join(", ")}` : ""}`} />
       <div className="grid items-start gap-5 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-4">
           <Card><CardHeader><CardTitle>Answer & guide</CardTitle><CardDescription>{opts.length ? `Options: ${opts.join(" · ")}` : "Theory question, written answer"}</CardDescription></CardHeader>

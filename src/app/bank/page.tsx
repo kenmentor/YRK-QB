@@ -133,7 +133,7 @@ export default function BankPage() {
 
   const visibleFiles = useMemo(() => {
     if (!q.trim()) return files;
-    return files.filter((f) => f.stem.toLowerCase().includes(q.toLowerCase()));
+    return files.filter((f) => (f.stem ?? "").toLowerCase().includes(q.toLowerCase()));
   }, [files, q]);
 
   // Shared entries merged inline at my own root (emerald).

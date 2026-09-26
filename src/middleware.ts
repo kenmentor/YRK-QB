@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 // workspaces, reviewing and personal pages intentional.
 // Signature verification stays in the API layer; here a present,
 // non-expired token is enough to let the request through.
-const PROTECTED = [/^\/workspaces(\/.*)?$/, /^\/profile$/, /^\/contributions$/, /^\/notifications$/, /^\/admin(\/.*)?$/, /^\/bank\/subject\/[^/]+\/contribute$/];
+const PROTECTED = [/^\/workspaces(\/.*)?$/, /^\/profile$/, /^\/contributions$/, /^\/notifications$/, /^\/admin(\/.*)?$/, /^\/activities(\/.*)?$/, /^\/bank\/subject\/[^/]+\/contribute$/];
 
 function tokenAlive(token: string | undefined): boolean {
   if (!token) return false;
@@ -31,5 +31,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/workspaces/:path*", "/profile", "/contributions", "/notifications", "/admin/:path*", "/bank/subject/:id/contribute"]
+  matcher: ["/workspaces/:path*", "/profile", "/contributions", "/notifications", "/admin/:path*", "/activities/:path*", "/bank/subject/:id/contribute"]
 };

@@ -20,8 +20,14 @@ export async function POST(req: Request) {
       workspaceId: body.workspaceId, authorId: user.id,
       topicId: body.topicId ?? null, type: body.type ?? "mcq",
       stem: body.stem ?? "", options: JSON.stringify(body.options ?? []),
-      correct: JSON.stringify(body.correct ?? []), explanation: body.explanation ?? "",
-      difficulty: body.difficulty ?? "medium", tags: JSON.stringify(body.tags ?? []),
+      correct: JSON.stringify(body.correct ?? []),
+      parts: typeof body.parts === "string" ? body.parts : JSON.stringify(body.parts ?? []),
+      explanation: body.explanation ?? "",
+      difficulty: body.difficulty ?? "medium",
+      difficultyIndex: body.difficultyIndex ?? 3,
+      category: body.category ?? "tertiary", sector: body.sector ?? "",
+      mediaUrl: body.mediaUrl ?? "",
+      tags: JSON.stringify(body.tags ?? []),
       // Revision loop: editing a published bank question starts a draft
       // linked to it; merging updates the canonical instead of duplicating.
       revisionOf: body.revisionOf ?? null

@@ -6,7 +6,17 @@ import { normalizeStem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type DraftRow = { id: string; workspaceId: string; status: string; stem: string; topicId: string | null; type: string; options: string; correct: string; explanation: string; difficulty: string; tags: string; imageUrl: string | null; revisionOf?: string | null };
+type DraftRow = { id: string; workspaceId: string; status: string; stem: string; topicId: string | null; type: string; options: string; correct: string; explanation: string; difficulty: string; tags: string; imageUrl: string | null; revisionOf?: string | null; parts?: string; difficultyIndex?: number; category?: string; sector?: string; mediaUrl?: string };
+
+function draftPayload(d: DraftRow) {
+  return {
+    topicId: d.topicId, type: d.type, stem: d.stem, normStem: normalizeStem(d.stem),
+    options: d.options, correct: d.correct, parts: d.parts ?? "[]", explanation: d.explanation,
+    difficulty: d.difficulty, difficultyIndex: d.difficultyIndex ?? 3,
+    category: d.category ?? "tertiary", sector: d.sector ?? "", mediaUrl: d.mediaUrl ?? "",
+    tags: d.tags, imageUrl: d.imageUrl,
+  };
+}
 
 export async function POST(req: Request) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
@@ -34,11 +44,7 @@ export async function POST(req: Request) {
       if (target.mergedIntoId) return NextResponse.json({ error: "Original was merged away, revise its canonical instead" }, { status: 409 });
       const question = await db.question.update({
         where: { id: draft.revisionOf },
-        data: {
-          topicId: draft.topicId, type: draft.type, stem: draft.stem, normStem: normalizeStem(draft.stem),
-          options: draft.options, correct: draft.correct, explanation: draft.explanation,
-          difficulty: draft.difficulty, tags: draft.tags, imageUrl: draft.imageUrl
-        }
+        data: draftPayload(draft)
       });
       await db.questionDraft.update({ where: { id: draft.id }, data: { status: "merged" } });
       await db.mergeRecord.create({ data: { workspaceId: draft.workspaceId, type, sourceIds: JSON.stringify(draftIds), targetIds: JSON.stringify([(question as { id: string }).id]), actorId: user.id } });
@@ -46,9 +52,7 @@ export async function POST(req: Request) {
     }
     const question = await db.question.create({
       data: {
-        topicId: draft.topicId, type: draft.type, stem: draft.stem, normStem: normalizeStem(draft.stem),
-        options: draft.options, correct: draft.correct, explanation: draft.explanation,
-        difficulty: draft.difficulty, tags: draft.tags, imageUrl: draft.imageUrl,
+        ...draftPayload(draft),
         workspaceId: draft.workspaceId, creatorId: user.id
       }
     });
@@ -94,7 +98,7 @@ export async function POST(req: Request) {
     const created: string[] = [];
     for (const d of approved) {
       const q = (await db.question.create({
-        data: { topicId: d.topicId, type: d.type, stem: d.stem, normStem: normalizeStem(d.stem), options: d.options, correct: d.correct, explanation: d.explanation, difficulty: d.difficulty, tags: d.tags, imageUrl: d.imageUrl, workspaceId: wsIds[0], creatorId: user.id }
+        data: { ...draftPayload(d), workspaceId: wsIds[0], creatorId: user.id }
       }) as unknown as { id: string });
       await db.questionDraft.update({ where: { id: d.id }, data: { status: "merged" } });
       created.push(q.id);

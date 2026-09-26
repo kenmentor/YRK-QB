@@ -126,7 +126,12 @@ export const db = {
   mergeRecord: makeModel("mergeRecords"),
   quizAttempt: makeModel("quizAttempts"),
   attemptAnswer: makeModel("attemptAnswers"),
+  folder: makeModel("folders"),
   editApplication: makeModel("editApplications"),
+  examSet: makeModel("examSets"),
+  folderShare: makeModel("folderShares"),
+  activity: makeModel("activities"),
+  activityShare: makeModel("activityShares"),
   proposal: makeModel("proposals"),
   notification: makeModel("notifications"),
   joinRequest: makeModel("joinRequests")

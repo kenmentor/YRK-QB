@@ -18,8 +18,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const body = await req.json();
   const data: Record<string, unknown> = {};
   if (body.payload) {
-    const pl = body.payload as { type: string; stem: string; options: string[]; correct: string[]; explanation: string; difficulty: string; topicId?: string };
-    const parsed = validateQuestion({ type: pl.type, stem: pl.stem, options: pl.options ?? [], correct: pl.correct ?? [], explanation: pl.explanation, difficulty: (pl.difficulty ?? "medium") as "easy" | "medium" | "hard", tags: [] });
+    const pl = body.payload as {
+      type: string; stem: string; options: string[]; correct: string[]; parts?: { stem?: string; label?: string; max?: number }[];
+      explanation: string; difficulty: string; difficultyIndex?: number; category?: string; sector?: string;
+      tags?: string[]; mediaUrl?: string; topicId?: string;
+    };
+    const parsed = validateQuestion({
+      type: pl.type, stem: pl.stem, options: pl.options ?? [], correct: pl.correct ?? [], parts: pl.parts ?? [],
+      explanation: pl.explanation, difficulty: (pl.difficulty ?? "medium") as "easy" | "medium" | "hard",
+      difficultyIndex: pl.difficultyIndex ?? 3, category: pl.category ?? "tertiary", sector: pl.sector ?? "",
+      tags: pl.tags ?? [], mediaUrl: pl.mediaUrl ?? "",
+    });
     if (!parsed.success) return NextResponse.json({ error: "Edits must stay valid", issues: parsed.error.issues }, { status: 422 });
     if (pl.topicId) {
       const topic = (await db.topic.findUnique({ where: { id: pl.topicId } }) as unknown as { subjectId: string } | null);

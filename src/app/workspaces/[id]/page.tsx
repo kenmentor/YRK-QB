@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { QuestionEditor, type QForm } from "@/components/question-editor";
 
-interface Draft { id: string; stem: string; status: string; type: string; options: string; correct: string; explanation: string; difficulty: string; authorId: string; topicId?: string; conflictBranch?: boolean; }
+interface Draft { id: string; stem: string; status: string; type: string; options: string; correct: string; explanation: string; difficulty: string; authorId: string; topicId?: string; conflictBranch?: boolean; parts?: string; difficultyIndex?: number; category?: string; sector?: string; tags?: string; mediaUrl?: string; }
 interface Ws {
   id: string; name: string; focus: string; subjectId?: string;
   destination?: { topic?: string; subject?: string; course?: string; session?: string };
@@ -58,7 +58,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
   }
 
   async function addDraft(f: QForm) {
-    const res = await fetch("/api/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspaceId: params.id, type: f.type, stem: f.stem, options: f.options, correct: f.correct, explanation: f.explanation, difficulty: f.difficulty, topicId: f.topicId || undefined }) });
+    const res = await fetch("/api/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspaceId: params.id, type: f.type, stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, topicId: f.topicId || undefined }) });
     if (!res.ok) { const d = await res.json(); toast(`Could not save: ${d.error}`); return; }
     const tName = topics.find((t) => t.id === f.topicId)?.name;
     toast(tName ? `Draft saved under ${tName}, send for review when ready.` : "Draft saved, send for review when ready. The bank owner publishes after approval.");
@@ -73,7 +73,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
       const r = await fetch(`/api/drafts/${d.id}`);
       if (r.ok) { const full = await r.json(); baseVersionId = full.versions?.[0]?.id; }
     }
-    const res = await fetch(`/api/drafts/${d.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stem: f.stem, options: f.options, correct: f.correct, explanation: f.explanation, difficulty: f.difficulty, topicId: f.topicId || undefined, note: "edit", baseVersionId }) });
+    const res = await fetch(`/api/drafts/${d.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: f.type, stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, topicId: f.topicId || undefined, note: "edit", baseVersionId }) });
     const data = await res.json();
     if (!res.ok) toast(`Cannot edit: ${data.error}`);
     else { toast(data.conflict ? "Saved with conflict, reviewer will resolve in versions." : "Edit saved as new version."); load(); loadDetail(d.id); }
@@ -161,7 +161,11 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     const res = await fetch("/api/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       workspaceId: params.id, type: question.type, stem: question.stem,
       options: JSON.parse(question.options || "[]"), correct: JSON.parse(question.correct || "[]"),
-      explanation: question.explanation, difficulty: question.difficulty, topicId: question.topicId ?? undefined,
+      parts: (() => { try { return JSON.parse(question.parts || "[]"); } catch { return []; } })(),
+      explanation: question.explanation, difficulty: question.difficulty,
+      difficultyIndex: question.difficultyIndex ?? 3, category: question.category ?? "tertiary",
+      sector: question.sector ?? "", tags: (() => { try { return JSON.parse(question.tags || "[]"); } catch { return []; } })(),
+      mediaUrl: question.mediaUrl ?? "", topicId: question.topicId ?? undefined,
       revisionOf: q.id
     }) });
     const data = await res.json();
@@ -304,7 +308,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
             {tab[d.id] === "edit" && canEdit && (
               <div className="mt-3">
                 <QuestionEditor key={d.id} topics={topics} submitLabel="Save as new version"
-                  initial={{ type: d.type as QForm["type"], stem: d.stem, options: JSON.parse(d.options || "[]"), correct: JSON.parse(d.correct || "[]"), explanation: d.explanation, difficulty: d.difficulty, topicId: d.topicId ?? "" }}
+                  initial={{ type: d.type as QForm["type"], stem: d.stem, options: JSON.parse(d.options || "[]"), correct: JSON.parse(d.correct || "[]"), parts: (() => { try { return JSON.parse(d.parts || "[]"); } catch { return []; } })(), explanation: d.explanation, difficulty: d.difficulty, difficultyIndex: d.difficultyIndex ?? 3, category: d.category ?? "tertiary", sector: d.sector ?? "", tags: (() => { try { return JSON.parse(d.tags || "[]"); } catch { return []; } })(), mediaUrl: d.mediaUrl ?? "", topicId: d.topicId ?? "" }}
                   onSubmit={(f) => saveEdit(d, f)} />
               </div>
             )}

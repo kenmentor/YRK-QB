@@ -21,7 +21,7 @@ export default function SubjectPage({ params }: { params: { id: string } }) {
       <PageHero eyebrow={`${d.subject.session} · ${d.subject.course}`} title={d.subject.name}
         description={`${d.subject.description} · ${d.topics.length} topics · ${d.questionCount} atomic questions.`}
         actions={<>
-          <a href={`/quiz?subjectId=${d.subject.id}`} className="w-full sm:w-auto"><Button variant="accent" size="lg" className="w-full sm:w-auto"><Play className="h-4 w-4" /> Start quiz</Button></a>
+          <a href={`/play?subjectId=${d.subject.id}`} className="w-full sm:w-auto"><Button variant="accent" size="lg" className="w-full sm:w-auto"><Play className="h-4 w-4" /> Start quiz</Button></a>
           <a href={`/bank/subject/${d.subject.id}/contribute`} className="w-full sm:w-auto"><Button variant="secondary" size="lg" className="w-full sm:w-auto"><PlusCircle className="h-4 w-4" /> Contribute a question</Button></a>
         </>} tone="dark" />
       <a href="/bank" className="w-fit"><Button variant="ghost" size="sm"><ArrowLeft className="h-3.5 w-3.5" /> All subjects</Button></a>
@@ -39,7 +39,7 @@ export default function SubjectPage({ params }: { params: { id: string } }) {
             <CardContent className="flex flex-wrap items-center gap-1.5">
               <Badge tone="draft">{t.questionCount} Qs</Badge>
               {Object.entries(t.byType).map(([k, v]) => <Badge key={k}>{k.replace("_", " ")} · {v}</Badge>)}
-              <a className="ml-auto" href={`/quiz?subjectId=${d.subject.id}&topicId=${t.id}`}><Button variant="outline" size="sm"><Play className="h-3.5 w-3.5" /> Quiz this topic</Button></a>
+              <a className="ml-auto" href={`/play?subjectId=${d.subject.id}&topicId=${t.id}`}><Button variant="outline" size="sm"><Play className="h-3.5 w-3.5" /> Quiz this topic</Button></a>
             </CardContent>
           </Card>
         ))}

@@ -26,8 +26,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     data: {
       stem: body.stem ?? draft.stem, options: body.options ? JSON.stringify(body.options) : draft.options,
       correct: body.correct ? JSON.stringify(body.correct) : draft.correct,
+      parts: body.parts !== undefined ? (typeof body.parts === "string" ? body.parts : JSON.stringify(body.parts)) : (draft as { parts?: string }).parts ?? "[]",
       explanation: body.explanation ?? draft.explanation,
-      difficulty: body.difficulty ?? draft.difficulty, topicId: body.topicId !== undefined ? body.topicId : draft.topicId,
+      difficulty: body.difficulty ?? draft.difficulty,
+      difficultyIndex: body.difficultyIndex ?? (draft as { difficultyIndex?: number }).difficultyIndex ?? 3,
+      category: body.category ?? (draft as { category?: string }).category ?? "tertiary",
+      sector: body.sector ?? (draft as { sector?: string }).sector ?? "",
+      mediaUrl: body.mediaUrl ?? (draft as { mediaUrl?: string }).mediaUrl ?? "",
+      topicId: body.topicId !== undefined ? body.topicId : draft.topicId,
       ...(body.type ? { type: body.type } : {}),
       status: "draft",
       conflictBranch: conflict ? true : draft.conflictBranch

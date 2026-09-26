@@ -23,10 +23,19 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const { decision, message } = await req.json();
 
   if (decision === "commit") {
-    const p = JSON.parse(proposal.payload) as { type: string; stem: string; options: string[]; correct: string[]; explanation: string; difficulty: string; topicId: string | null };
+    const p = JSON.parse(proposal.payload) as {
+      type: string; stem: string; options: string[]; correct: string[]; parts?: { stem?: string; label?: string; max?: number }[];
+      explanation: string; difficulty: string; difficultyIndex?: number; category?: string; sector?: string;
+      tags?: string[]; mediaUrl?: string; topicId: string | null;
+    };
     // Same bar as the workspace flow: full schema validation, topic must
     // belong to the proposal's subject, no silent duplicates.
-    const parsed = validateQuestion({ type: p.type, stem: p.stem, options: p.options ?? [], correct: p.correct ?? [], explanation: p.explanation, difficulty: (p.difficulty ?? "medium") as "easy" | "medium" | "hard", tags: [] });
+    const parsed = validateQuestion({
+      type: p.type, stem: p.stem, options: p.options ?? [], correct: p.correct ?? [], parts: p.parts ?? [],
+      explanation: p.explanation, difficulty: (p.difficulty ?? "medium") as "easy" | "medium" | "hard",
+      difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "",
+      mediaUrl: p.mediaUrl ?? "", tags: p.tags ?? [],
+    });
     if (!parsed.success) return NextResponse.json({ error: "Payload fails question validation", issues: parsed.error.issues }, { status: 422 });
     if (p.topicId) {
       const topic = (await db.topic.findUnique({ where: { id: p.topicId } }) as unknown as { subjectId: string } | null);
@@ -37,7 +46,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const dup = await db.question.findFirst({ where: { normStem: normalizeStem(p.stem) } });
     if (dup) return NextResponse.json({ error: "This question already exists in the bank", duplicateId: (dup as { id: string }).id }, { status: 409 });
     const question = await db.question.create({
-      data: { topicId: p.topicId, type: p.type, stem: p.stem, normStem: normalizeStem(p.stem), options: JSON.stringify(p.options ?? []), correct: JSON.stringify(p.correct ?? []), explanation: p.explanation, difficulty: p.difficulty ?? "medium", tags: JSON.stringify(["community"]), creatorId: proposal.contributorId }
+      data: {
+        topicId: p.topicId, type: p.type, stem: p.stem, normStem: normalizeStem(p.stem),
+        options: JSON.stringify(p.options ?? []), correct: JSON.stringify(p.correct ?? []),
+        parts: JSON.stringify(p.parts ?? []), explanation: p.explanation,
+        difficulty: p.difficulty ?? "medium", difficultyIndex: p.difficultyIndex ?? 3,
+        category: p.category ?? "tertiary", sector: p.sector ?? "", mediaUrl: p.mediaUrl ?? "",
+        tags: JSON.stringify(["community", ...((p.tags ?? []) as string[])]), creatorId: proposal.contributorId,
+      }
     });
     await db.proposal.update({ where: { id: proposal.id }, data: { status: "committed", adminMessage: message ?? "" } });
     await db.mergeRecord.create({ data: { type: "approve_to_live", sourceIds: JSON.stringify([proposal.id]), targetIds: JSON.stringify([(question as { id: string }).id]), actorId: user.id } });

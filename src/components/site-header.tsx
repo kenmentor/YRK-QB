@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 import { Bell, Menu, X, LogOut, UserRound, ShieldCheck, ChevronRight, FileCheck2 } from "lucide-react";
 
 const LINKS = [
-  { href: "/workspaces", label: "Workspaces" },
   { href: "/bank", label: "Bank" },
-  { href: "/quiz", label: "Quiz" }
+  { href: "/play", label: "Play" },
+  { href: "/archive", label: "Archive" }
 ];
 
 function NavLink({ href, label, active, onClick, mobile }: { href: string; label: string; active: boolean; onClick?: () => void; mobile?: boolean }) {

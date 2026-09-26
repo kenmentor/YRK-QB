@@ -19,7 +19,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span>YRK Question Bank, built together, learned together.</span>
           <a href="/terms" className="font-medium hover:text-slate-600 hover:underline">Terms</a>
           <a href="/bank" className="font-medium hover:text-slate-600 hover:underline">Bank</a>
-          <a href="/quiz" className="font-medium hover:text-slate-600 hover:underline">Quiz</a>
+          <a href="/play" className="font-medium hover:text-slate-600 hover:underline">Play</a>
+          <a href="/archive" className="font-medium hover:text-slate-600 hover:underline">Archive</a>
         </footer>
       </body>
     </html>

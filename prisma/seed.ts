@@ -213,7 +213,203 @@ async function main() {
     await db.quizAttempt.update({ where: { id: attempt.id }, data: { score, total: slice.length } });
   }
 
-  console.log("Seed done: 64 bank Qs + dup pair + 4 drafts + 2 proposals + 15 attempts.");
+
+  // ---- iQueBS catalog demo: new formats, folders, shares, set + activity ----
+  type CatQ = {
+    key: string; topic: string; type: string; stem: string;
+    options?: string[]; correct: string[]; parts?: { stem?: string; label?: string; max?: number }[];
+    explanation: string; difficultyIndex: number; category: string; sector: string; tags: string[];
+    creator: string; folder?: string | null;
+  };
+  const catBank: CatQ[] = [
+    {
+      key: "mtf1", topic: "WAEC/Physics 2024/Mechanics/Motion", type: "mtf",
+      stem: "Judge each statement about a ball thrown straight up (ignore air resistance).",
+      correct: ["True", "False", "True"],
+      parts: [{ stem: "Velocity is zero at the top of flight" }, { stem: "Acceleration is zero at the top of flight" }, { stem: "Speed on the way down equals speed at the same height on the way up" }],
+      explanation: "Velocity vanishes at the top but g never does; energy conservation restores speed.",
+      difficultyIndex: 3, category: "secondary", sector: "Science", tags: ["kinematics", "mtf"], creator: ama.id,
+    },
+    {
+      key: "emq1", topic: "College/Anatomy 101/Cardio/Heart", type: "emq",
+      stem: "Match each presentation to the most likely valve lesion.",
+      options: ["Aortic stenosis", "Mitral regurgitation", "Mitral stenosis", "Aortic regurgitation", "Tricuspid regurgitation"],
+      correct: ["Aortic stenosis", "Mitral stenosis", "Mitral regurgitation"],
+      parts: [{ stem: "Elderly man, syncope on exertion, harsh crescendo-decrescendo murmur" }, { stem: "Young woman, malar flush, opening snap with rumbling diastolic murmur" }, { stem: "Holosystolic murmur radiating to the axilla after MI" }],
+      explanation: "Classic murmur–lesion pairings; radiation and timing discriminate.",
+      difficultyIndex: 4, category: "tertiary", sector: "Medicine & Surgery", tags: ["valves", "emq"], creator: kofi.id,
+    },
+    {
+      key: "mat1", topic: "PMP/PMP Prep/People/Team", type: "matching",
+      stem: "Drag each ceremony to its primary purpose.",
+      options: ["Inspect the increment", "Plan the sprint", "Synchronize daily", "Reflect and improve"],
+      correct: ["Plan the sprint", "Synchronize daily", "Inspect the increment"],
+      parts: [{ stem: "Sprint planning" }, { stem: "Daily standup" }, { stem: "Sprint review" }],
+      explanation: "Planning commits, standup syncs, review inspects with stakeholders.",
+      difficultyIndex: 2, category: "professional", sector: "Engineering", tags: ["scrum", "matching"], creator: yaw.id,
+    },
+    {
+      key: "kfq1", topic: "College/Anatomy 101/Cardio/Heart", type: "kfq",
+      stem: "A 58-year-old man has crushing retrosternal pain radiating to the left arm. Answer the key features.",
+      correct: ["myocardial infarction||MI||STEMI", "aspirin||troponin||ECG"],
+      parts: [{ stem: "Most likely diagnosis?" }, { stem: "Name one immediate investigation or treatment." }],
+      explanation: "Key features: recognition + first critical action. Alternatives accepted.",
+      difficultyIndex: 4, category: "tertiary", sector: "Medicine & Surgery", tags: ["clinical", "kfq"], creator: kofi.id,
+    },
+    {
+      key: "saq1", topic: "WAEC/Physics 2024/Mechanics/Forces", type: "saq",
+      stem: "State the SI unit of power.",
+      correct: ["watt", "W", "watts"],
+      explanation: "Power = work/time; 1 W = 1 J/s.",
+      difficultyIndex: 1, category: "secondary", sector: "Science", tags: ["units", "saq"], creator: ama.id,
+    },
+    {
+      key: "meq1", topic: "College/Anatomy 101/Cardio/Heart", type: "meq",
+      stem: "Unfolding case: a 62-year-old woman collapses. Steps reveal as you answer.",
+      correct: ["pulse||carotid pulse", "myocardial infarction||MI", "aspirin||oxygen||morphine"],
+      parts: [{ stem: "Step 1 — No response. What do you check first?" }, { stem: "Step 2 — ECG shows ST elevation. Diagnosis?" }, { stem: "Step 3 — Name one immediate drug." }],
+      explanation: "Sequential reasoning: ABCs, then diagnosis, then management.",
+      difficultyIndex: 5, category: "tertiary", sector: "Medicine & Surgery", tags: ["clinical", "meq"], creator: kofi.id,
+    },
+    {
+      key: "sct1", topic: "College/Anatomy 101/Cardio/Heart", type: "sct",
+      stem: "Hypothesis: acute pericarditis. New information: ECG shows diffuse concave ST elevation with PR depression. How does this change the hypothesis?",
+      options: ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"],
+      correct: ["Strongly agree"],
+      explanation: "Diffuse concave ST elevation + PR depression is textbook pericarditis — the panel strongly agrees.",
+      difficultyIndex: 4, category: "tertiary", sector: "Medicine & Surgery", tags: ["ecg", "sct"], creator: kofi.id,
+    },
+    {
+      key: "cmp1", topic: "WAEC/Physics 2024/Mechanics/Motion", type: "compound",
+      stem: "A 2 kg block slides from rest down a 5 m, 30° frictionless incline (g = 10 m/s²). Answer both parts.",
+      correct: ["50||50J||50 joules", "7.1||7.07||7.07 m/s"],
+      parts: [{ stem: "(a) Kinetic energy at the bottom, in joules?" }, { stem: "(b) Speed at the bottom, in m/s (1 d.p.)?" }],
+      explanation: "(a) h = 5·sin30° = 2.5 m, so KE = mgh = 2×10×2.5 = 50 J. (b) v = √(2KE/m) = √50 ≈ 7.1 m/s.",
+      difficultyIndex: 4, category: "secondary", sector: "Science", tags: ["energy", "compound"], creator: ama.id,
+    },
+    {
+      key: "osce1", topic: "College/Anatomy 101/Cardio/Heart", type: "osce",
+      stem: "OSCE Station 3 (8 minutes): examine the cardiovascular system of a consenting adult.",
+      correct: [],
+      parts: [{ label: "Hand hygiene + introduction + consent", max: 2 }, { label: "General inspection (breathlessness, pallor, devices)", max: 3 }, { label: "Hands, pulse (rate, rhythm, character), blood pressure", max: 5 }, { label: "Face, neck (JVP), praecordium (inspect, palpate, auscultate)", max: 7 }, { label: "Closure: thanks, summarizes, proposes plan", max: 3 }],
+      explanation: "Systematic routine scores: inspection → hands → face/neck → praecordium → closure. 20 marks total.",
+      difficultyIndex: 4, category: "tertiary", sector: "Medicine & Surgery", tags: ["osce", "cvs"], creator: kofi.id,
+    },
+    {
+      key: "dops1", topic: "College/Anatomy 101/Cardio/Vessels", type: "dops",
+      stem: "DOPS: adult venepuncture for blood cultures. Examiner observes and scores.",
+      correct: [],
+      parts: [{ label: "Verifies identity + consent + hand hygiene", max: 2 }, { label: "Assembles equipment, applies tourniquet, selects vein", max: 3 }, { label: "Aseptic technique + successful draw + labelling", max: 3 }, { label: "Sharps safety + aftercare + documentation", max: 2 }],
+      explanation: "10-mark checklist; any sharps breach caps the station at 4.",
+      difficultyIndex: 3, category: "tertiary", sector: "Medicine & Surgery", tags: ["dops", "procedural"], creator: kofi.id,
+    },
+    {
+      key: "viva1", topic: "WAEC/Physics 2024/Waves/Sound", type: "viva",
+      stem: "Viva (10 minutes): wave physics. Examiner probes with the questions below.",
+      correct: [],
+      parts: [{ label: "Defines wave + distinguishes transverse/longitudinal", max: 3 }, { label: "Explains resonance with an example", max: 4 }, { label: "Derives v = fλ and applies it", max: 3 }],
+      explanation: "Probe depth, not recall: ask 'why' twice per answer. 10 marks total.",
+      difficultyIndex: 3, category: "secondary", sector: "Science", tags: ["viva", "waves"], creator: ama.id,
+    },
+    {
+      key: "mcx1", topic: "College/Anatomy 101/Cardio/Heart", type: "minicex",
+      stem: "Mini-CEX: observe a trainee taking chest-pain history (15 minutes).",
+      correct: [],
+      parts: [{ label: "History taking (SOCRATES + red flags)", max: 4 }, { label: "Communication + empathy", max: 3 }, { label: "Clinical judgement + plan", max: 3 }],
+      explanation: "Workplace snapshot: history, humanity, plan. 10 marks total.",
+      difficultyIndex: 3, category: "tertiary", sector: "Medicine & Surgery", tags: ["minicex"], creator: kofi.id,
+    },
+    {
+      key: "msf1", topic: "PMP/PMP Prep/People/Team", type: "msf",
+      stem: "360° review for a junior PM after one quarter. Raters score independently.",
+      correct: [],
+      parts: [{ label: "Communication with stakeholders", max: 5 }, { label: "Reliability + follow-through", max: 5 }, { label: "Teamwork + conflict handling", max: 5 }],
+      explanation: "Aggregate rater means; discuss gaps ≥2 points. 15 marks total.",
+      difficultyIndex: 2, category: "professional", sector: "Engineering", tags: ["msf", "feedback"], creator: yaw.id,
+    },
+  ];
+
+  async function ensureFolder(ownerId: string, name: string, parentId: string | null, extra: Record<string, unknown> = {}) {
+    const ex = (await db.folder.findFirst({ where: { ownerId, parentId, name } }) as unknown as { id: string } | null);
+    if (ex) return ex as unknown as { id: string; name: string };
+    return (await db.folder.create({ data: { ownerId, name, parentId, ...extra } }) as unknown as { id: string; name: string });
+  }
+
+  // Personal drive folders for Ama (+ one shared + one public).
+  const amaRoot = await ensureFolder(ama.id, "WAEC Physics 2024", null);
+  const amaMech = await ensureFolder(ama.id, "Mechanics", amaRoot.id);
+  const amaClin = await ensureFolder(kofi.id, "Clinical Skills", null, { isPublic: true, publicAccess: "use" });
+
+  for (const q of catBank) {
+    const n = norm(q.stem);
+    let ex = (await db.question.findFirst({ where: { normStem: n } }) as unknown as { id: string; folderId?: string | null } | null);
+    if (!ex) {
+      ex = (await db.question.create({
+        data: {
+          topicId: T(q.topic), type: q.type, stem: q.stem, normStem: n,
+          options: JSON.stringify(q.options ?? []), correct: JSON.stringify(q.correct),
+          parts: JSON.stringify(q.parts ?? []), explanation: q.explanation,
+          difficulty: q.difficultyIndex <= 2 ? "easy" : q.difficultyIndex >= 4 ? "hard" : "medium",
+          difficultyIndex: q.difficultyIndex, category: q.category, sector: q.sector,
+          tags: JSON.stringify(q.tags), mediaUrl: "", creatorId: q.creator,
+          folderId: q.folder ?? null,
+        },
+      }) as unknown as { id: string; folderId?: string | null });
+    }
+    idByKey[q.key] = ex.id;
+  }
+  // File catalog items into folders (only if still unfiled — never clobber).
+  async function fileIfBare(key: string, folderId: string) {
+    const qd = (await db.question.findUnique({ where: { id: idByKey[key] } }) as unknown as { folderId?: string | null } | null);
+    if (qd && !qd.folderId) await db.question.update({ where: { id: idByKey[key] }, data: { folderId } });
+  }
+  for (const k of ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m10"]) await fileIfBare(k, amaMech.id);
+  for (const k of ["mtf1", "cmp1", "saq1", "viva1"]) await fileIfBare(k, amaMech.id);
+  for (const k of ["osce1", "dops1", "mcx1", "emq1", "kfq1", "meq1", "sct1"]) await fileIfBare(k, amaClin.id);
+
+  // Share Ama's bank folder with Yaw (editor) so testers see sharing.
+  const yawShare = (await db.folderShare.findFirst({ where: { ownerId: ama.id, folderId: amaRoot.id, userId: yaw.id } }) as unknown as { id: string } | null);
+  if (!yawShare) {
+    await db.folderShare.create({ data: { ownerId: ama.id, folderId: amaRoot.id, userId: yaw.id, role: "editor" } });
+    await db.notification.create({ data: { userId: yaw.id, kind: "share", title: "Bank shared with you", body: "Ama gave you editor access to folder “WAEC Physics 2024”.", link: "/bank", read: false } });
+  }
+
+  // Exam set for Ama.
+  const setEx = (await db.examSet.findFirst({ where: { ownerId: ama.id, title: "SSS II Physics — First Term Exam" } }) as unknown as { id: string } | null);
+  if (!setEx) {
+    await db.examSet.create({
+      data: {
+        ownerId: ama.id, title: "SSS II Physics — First Term Exam",
+        institution: "Demo College", department: "Science", domain: "Secondary",
+        level: "SSS II", term: "First", subject: "Physics",
+        questionIds: JSON.stringify(["m1", "m3", "m5", "saq1", "mtf1"].map((k) => idByKey[k])),
+      },
+    });
+  }
+
+  // Public activity pulling it together (mixed assembly: explicit + folder).
+  const actEx = (await db.activity.findFirst({ where: { ownerId: ama.id, title: "WAEC Physics Mock 1" } }) as unknown as { id: string } | null);
+  if (!actEx) {
+    await db.activity.create({
+      data: {
+        ownerId: ama.id, title: "WAEC Physics Mock 1", banner: "indigo",
+        details: "A 10-question mixed mock: motion, forces, and clinical reasoning warm-ups. Practice or sit it strict.",
+        rulesPractice: "", rulesTest: "",
+        modes: JSON.stringify(["practice", "selftest", "exam"]),
+        visibility: "public", category: "secondary", sector: "Science", subject: "Physics",
+        assembly: JSON.stringify([
+          { kind: "q", id: idByKey["m1"] },
+          { kind: "q", id: idByKey["m3"] },
+          { kind: "f", id: amaMech.id },
+          { kind: "q", id: idByKey["saq1"] },
+        ]),
+        questionIds: JSON.stringify([idByKey["m1"], idByKey["m3"], idByKey["saq1"]]),
+        folderIds: JSON.stringify([amaMech.id]),
+      },
+    });
+  }
+
+  console.log("Seed done: 77 bank Qs (all 19 formats) + folders + share + exam set + public activity + drafts + attempts.");
   process.exit(0);
 }
 

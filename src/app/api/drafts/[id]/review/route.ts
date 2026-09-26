@@ -16,7 +16,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
   const draft = (await db.questionDraft.findUnique({ where: { id: params.id } }) as unknown as {
     id: string; workspaceId: string; authorId: string; type: string; stem: string; options: string; correct: string;
-    explanation: string; difficulty: string; tags: string; status: string;
+    explanation: string; difficulty: string; tags: string; status: string; parts?: string;
+    difficultyIndex?: number; category?: string; sector?: string; mediaUrl?: string;
   } | null);
   if (!draft) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const role = await getMembership(user.id, draft.workspaceId);
@@ -25,7 +26,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   if (action === "request") {
     if (!canEdit(role)) return NextResponse.json({ error: "Only editors/owners send drafts for review" }, { status: 403 });
-    const parsed = validateQuestion({ type: draft.type, stem: draft.stem, options: JSON.parse(draft.options), correct: JSON.parse(draft.correct), explanation: draft.explanation, difficulty: draft.difficulty as "easy" | "medium" | "hard", tags: JSON.parse(draft.tags) });
+    const parsed = validateQuestion({
+      type: draft.type, stem: draft.stem, options: JSON.parse(draft.options), correct: JSON.parse(draft.correct),
+      parts: (() => { try { return JSON.parse(draft.parts ?? "[]"); } catch { return []; } })(),
+      explanation: draft.explanation, difficulty: draft.difficulty as "easy" | "medium" | "hard",
+      difficultyIndex: draft.difficultyIndex ?? 3, category: draft.category ?? "tertiary",
+      sector: draft.sector ?? "", mediaUrl: draft.mediaUrl ?? "", tags: JSON.parse(draft.tags),
+    });
     if (!parsed.success) return NextResponse.json({ error: "Fix validation before review", issues: parsed.error.issues }, { status: 422 });
     try {
       assertTransition(draft.status as "draft", "in_review");

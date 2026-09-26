@@ -4,7 +4,38 @@
 
 :root {
   --ink: #0f172a;
-  --accent: #4f46e5;
+  --accent: #7853da;
+  color-scheme: light;
+
+  /* ---- YRK theme tokens (adopted reference system) ---- */
+  --yrk-brand: #7853da;
+  --yrk-surface-canvas: #f8fafc;
+  --yrk-surface-card: #ffffff;
+  --yrk-surface-elevated: #ffffff;
+  --yrk-text-primary: #0f172a;
+  --yrk-text-secondary: #475569;
+  --yrk-text-tertiary: #64748b;
+  --yrk-text-disabled: #94a3b8;
+  --yrk-border-subtle: #e2e8f0;
+  --yrk-border-default: #cbd5e1;
+  --yrk-border-strong: #94a3b8;
+}
+
+.dark {
+  color-scheme: dark;
+  --ink: #eceef2;
+  --accent: #8b6fe8;
+
+  --yrk-surface-canvas: #0f1115;
+  --yrk-surface-card: #16181d;
+  --yrk-surface-elevated: #1e2127;
+  --yrk-text-primary: #eceef2;
+  --yrk-text-secondary: #a7adb8;
+  --yrk-text-tertiary: #87909e;
+  --yrk-text-disabled: #5b616c;
+  --yrk-border-subtle: #23262d;
+  --yrk-border-default: #2f333b;
+  --yrk-border-strong: #464c58;
 }
 
 html { scroll-behavior: smooth; }
@@ -19,7 +50,7 @@ body {
 
 /* consistent focus */
 :where(a, button, input, select, textarea):focus-visible {
-  outline: 2px solid #4f46e5;
+  outline: 2px solid var(--yrk-brand);
   outline-offset: 2px;
   border-radius: 6px;
 }

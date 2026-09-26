@@ -45,14 +45,14 @@ export default function WorkspacesPage() {
   const openSpaces = items.filter((w) => !w.myRole && w.visibility === "open");
 
   function cards(list: Ws[], empty: string) {
-    if (!list.length) return <div className="text-sm text-slate-400">{empty}</div>;
+    if (!list.length) return <div className="text-sm text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{empty}</div>;
     return (
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((w) => (
           <Card key={w.id} className="group transition hover:shadow-lift">
             <CardHeader>
               <div className="flex flex-wrap items-center gap-2">
-                <CardTitle className="flex items-center gap-2"><Users className="h-4 w-4 text-indigo-600" />{w.name}</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Users className="h-4 w-4 text-brand-600" />{w.name}</CardTitle>
                 {w.myRole && <Badge tone={w.myRole === "owner" ? "approved" : "draft"}>{w.myRole}</Badge>}
                 {w.visibility === "open" && <Badge tone="open">open</Badge>}
               </div>
@@ -83,7 +83,7 @@ export default function WorkspacesPage() {
               <CardContent className="grid gap-3">
                 <label className="yrk-label">Space name<Input placeholder="e.g. WAEC Physics 2024, 50 Q set" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
                 <label className="yrk-label">Focus / goal<Textarea placeholder="What will this bank cover?" value={form.focus} onChange={(e) => setForm({ ...form, focus: e.target.value })} /></label>
-                <div className="grid gap-2 rounded-xl bg-slate-50 p-3">
+                <div className="grid gap-2 rounded-xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] p-3">
                   <span className="yrk-label">Attach to Session → Course → Subject → Topic</span>
                   <Select value={form.sessionId} onChange={(e) => setForm({ ...form, sessionId: e.target.value, courseId: "", subjectId: "", topicId: "" })}>
                     <option value="">Session</option>{tree.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -100,19 +100,19 @@ export default function WorkspacesPage() {
         </div>
       )}
       <section className="grid gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400">I own ({owners.length})</h2>
+        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">I own ({owners.length})</h2>
         {cards(owners, "No spaces yet, create one above.")}
       </section>
       <section className="grid gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400">I edit ({editors.length})</h2>
+        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">I edit ({editors.length})</h2>
         {cards(editors, "Nothing here.")}
       </section>
       <section className="grid gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400">I review ({reviewers.length})</h2>
+        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">I review ({reviewers.length})</h2>
         {cards(reviewers, "Nothing here.")}
       </section>
       <section className="grid gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400">Open spaces, request to join ({openSpaces.length})</h2>
+        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Open spaces, request to join ({openSpaces.length})</h2>
         {openSpaces.length ? cards(openSpaces, "") : <EmptyState title="No open spaces" hint="Invite-only spaces stay hidden until invited." />}
       </section>
     </div>

@@ -42,34 +42,34 @@ export default function ArchivePage() {
         description={me ? "Published by the community. Open one for its rules, then play — or start your own." : "Published by the community. Log in to play and track history."}
         actions={!authLoaded ? undefined : me ? <NewActivityButton /> : <a href="/login"><Button variant="accent">Log in to play</Button></a>} tone="dark" />
       <Card><CardContent className="grid gap-3 p-4">
-        <div className="relative"><Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+        <div className="relative"><Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />
           <Input className="pl-10" placeholder="Search artifacts and folders…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <div className="flex flex-wrap gap-1.5">
-          <button onClick={() => setCat("")} className={`rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${!cat ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500 hover:text-slate-800"}`}>All</button>
+          <button onClick={() => setCat("")} className={`rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${!cat ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-white/[0.07] text-slate-500 dark:text-[#9aa3b2] hover:text-slate-800 dark:text-[var(--yrk-text-primary)]"}`}>All</button>
           {LADDER.map((c) => (
-            <button key={c} onClick={() => setCat(cat === c ? "" : c)} className={`rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${cat === c ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500 hover:text-slate-800"}`}>{LADDER_LABEL[c]}</button>
+            <button key={c} onClick={() => setCat(cat === c ? "" : c)} className={`rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${cat === c ? "bg-slate-900 text-white" : "bg-slate-100 dark:bg-white/[0.07] text-slate-500 dark:text-[#9aa3b2] hover:text-slate-800 dark:text-[var(--yrk-text-primary)]"}`}>{LADDER_LABEL[c]}</button>
           ))}
         </div>
       </CardContent></Card>
 
       <section className="grid gap-5">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400"><Globe className="h-4 w-4" /> Activities · {loading ? "…" : fActs.length}</h2>
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]"><Globe className="h-4 w-4" /> Activities · {loading ? "…" : fActs.length}</h2>
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white">
-                <div className="h-28 animate-pulse bg-slate-100" />
+              <div key={i} className="overflow-hidden rounded-3xl border border-slate-200/80 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)]">
+                <div className="h-28 animate-pulse bg-slate-100 dark:bg-white/[0.07]" />
                 <div className="grid gap-2 p-5">
-                  <div className="h-5 w-3/4 animate-pulse rounded-md bg-slate-100" />
-                  <div className="h-4 w-1/2 animate-pulse rounded-md bg-slate-100" />
-                  <div className="h-4 w-full animate-pulse rounded-md bg-slate-100" />
+                  <div className="h-5 w-3/4 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" />
+                  <div className="h-4 w-1/2 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" />
+                  <div className="h-4 w-full animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" />
                 </div>
               </div>
             ))}
           </div>
         ) : actGroups.length ? actGroups.map((g) => (
           <div key={g.cat} className="grid gap-3">
-            <h3 className="flex items-center gap-2 text-[13px] font-bold text-slate-600">
+            <h3 className="flex items-center gap-2 text-[13px] font-bold text-slate-600 dark:text-[var(--yrk-text-secondary)]">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-900 text-[10px] font-black text-white">{LADDER.indexOf(g.cat) + 1}</span>
               {LADDER_LABEL[g.cat]}
             </h3>
@@ -79,11 +79,11 @@ export default function ArchivePage() {
                   <Banner preset={a.banner} title={a.title} />
                   <CardContent className="grid gap-2 p-5">
                     <div className="text-lg font-bold leading-snug">{a.title}</div>
-                    <div className="text-[13px] text-slate-500">
-                      by <span className="font-semibold text-slate-700">{a.ownerName}</span>
+                    <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">
+                      by <span className="font-semibold text-slate-700 dark:text-[#c6ccd6]">{a.ownerName}</span>
                       {!!a.contributors.length && <> · with {a.contributors.map((c) => c.name).join(", ")}</>}
                     </div>
-                    {a.details && <div className="line-clamp-2 text-sm text-slate-500">{a.details}</div>}
+                    {a.details && <div className="line-clamp-2 text-sm text-slate-500 dark:text-[#9aa3b2]">{a.details}</div>}
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Badge>{a.questionCount} Qs</Badge>
                       <Badge tone="draft">{LADDER_LABEL[a.category ?? "tertiary"] ?? a.category}{a.sector ? ` · ${a.sector}` : ""}</Badge>
@@ -99,24 +99,24 @@ export default function ArchivePage() {
       </section>
 
       <section className="grid gap-3">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400"><Folder className="h-4 w-4" /> Public folders · {loading ? "…" : fFolders.length}</h2>
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]"><Folder className="h-4 w-4" /> Public folders · {loading ? "…" : fFolders.length}</h2>
         {loading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4">
-                <span className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-100" />
-                <div className="grid flex-1 gap-1.5"><span className="h-4 w-2/3 animate-pulse rounded-md bg-slate-100" /><span className="h-3 w-1/2 animate-pulse rounded-md bg-slate-100" /></div>
+              <div key={i} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] p-4">
+                <span className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-100 dark:bg-white/[0.07]" />
+                <div className="grid flex-1 gap-1.5"><span className="h-4 w-2/3 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" /><span className="h-3 w-1/2 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" /></div>
               </div>
             ))}
           </div>
         ) : fFolders.length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {fFolders.map((f) => (
-              <a key={f.id} href={`/archive/folder/${f.id}`} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-soft transition hover:shadow-lift">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50"><Folder className="h-5 w-5 text-amber-500" fill="#fcd34d" strokeWidth={1.5} /></span>
+              <a key={f.id} href={`/archive/folder/${f.id}`} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] p-4 shadow-soft transition hover:shadow-lift">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950"><Folder className="h-5 w-5 text-amber-500" fill="#fcd34d" strokeWidth={1.5} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 text-sm font-semibold"><span className="truncate">{f.name}</span><Globe className="h-3.5 w-3.5 shrink-0 text-slate-400" /></div>
-                  <div className="truncate text-xs text-slate-400">by {f.ownerName} · {f.questionCount} Qs · {LADDER_LABEL[f.category ?? "tertiary"] ?? f.category}{f.sector ? ` · ${f.sector}` : ""} · {f.publicAccess === "use" ? "playable" : "view only"}</div>
+                  <div className="flex items-center gap-1.5 text-sm font-semibold"><span className="truncate">{f.name}</span><Globe className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" /></div>
+                  <div className="truncate text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">by {f.ownerName} · {f.questionCount} Qs · {LADDER_LABEL[f.category ?? "tertiary"] ?? f.category}{f.sector ? ` · ${f.sector}` : ""} · {f.publicAccess === "use" ? "playable" : "view only"}</div>
                 </div>
               </a>
             ))}

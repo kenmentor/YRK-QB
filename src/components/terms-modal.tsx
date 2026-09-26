@@ -17,7 +17,7 @@ export function TermsModal({ onAccept, onClose }: { onAccept: () => void; onClos
           </div>
         </CardHeader>
         <CardContent className="grid gap-2 text-sm">
-          {TERMS.map((t, i) => <div key={i} className="flex gap-2.5 rounded-xl bg-slate-50 px-3.5 py-2.5"><span className="font-bold text-indigo-600">{i + 1}.</span><span className="text-slate-600">{t}</span></div>)}
+          {TERMS.map((t, i) => <div key={i} className="flex gap-2.5 rounded-xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] px-3.5 py-2.5"><span className="font-bold text-brand-600">{i + 1}.</span><span className="text-slate-600 dark:text-[var(--yrk-text-secondary)]">{t}</span></div>)}
           <div className="mt-1 flex flex-wrap gap-2">
             <Button variant="accent" onClick={onAccept}>OK, I accept</Button>
             <a href="/terms" target="_blank"><Button variant="ghost">Full terms page</Button></a>

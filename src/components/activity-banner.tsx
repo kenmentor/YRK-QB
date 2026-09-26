@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 export const BANNER_STYLES: Record<string, string> = {
-  indigo: "from-indigo-600 to-indigo-900",
+  indigo: "from-brand-600 to-brand-900",
   emerald: "from-emerald-600 to-emerald-900",
   amber: "from-amber-500 to-amber-800",
   rose: "from-rose-600 to-rose-900",

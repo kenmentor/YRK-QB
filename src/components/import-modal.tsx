@@ -57,41 +57,41 @@ export function ImportModal({ scopeName, parentId, onDone, onClose }: {
 
   return (
     <div className="yrk-sheet fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
-      <div className="grid max-h-[90dvh] w-full max-w-md gap-3 overflow-y-auto rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
+      <div className="grid max-h-[90dvh] w-full max-w-md gap-3 overflow-y-auto rounded-3xl bg-white dark:bg-[var(--yrk-surface-elevated)] p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-2">
           <div className="text-sm font-bold">Import into “{scopeName}”</div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]"><X className="h-4 w-4" /></button>
         </div>
-        <div className="text-[13px] leading-relaxed text-slate-500">
+        <div className="text-[13px] leading-relaxed text-slate-500 dark:text-[#9aa3b2]">
           Drop a <span className="font-semibold">.zip real folder</span> or a <span className="font-semibold">.json</span> (bundle or single question, incl. hand-written). Format is validated before anything is created.
         </div>
-        <label className="grid cursor-pointer place-items-center gap-1.5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40">
-          <Upload className="h-6 w-6 text-slate-400" />
-          <span className="text-sm font-semibold text-slate-600">Pick a .zip or .json file</span>
+        <label className="grid cursor-pointer place-items-center gap-1.5 rounded-2xl border border-dashed border-slate-300 dark:border-[var(--yrk-border-default)] bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] px-4 py-6 text-center transition hover:border-brand-400 hover:bg-brand-50/40">
+          <Upload className="h-6 w-6 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />
+          <span className="text-sm font-semibold text-slate-600 dark:text-[var(--yrk-text-secondary)]">Pick a .zip or .json file</span>
           <Input type="file" accept=".zip,.json" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
         </label>
-        <button className="flex items-center justify-center gap-1.5 text-[13px] font-medium text-indigo-600 hover:underline"
+        <button className="flex items-center justify-center gap-1.5 text-[13px] font-medium text-brand-600 hover:underline"
           onClick={() => downloadBlob("sample-bank.json", JSON.stringify(SAMPLE_BUNDLE, null, 2), "application/json")}>
           <Download className="h-3.5 w-3.5" /> Download a sample JSON to copy the format
         </button>
         {parsed && (
-          <div className="grid gap-2 rounded-2xl border border-slate-100 p-3">
+          <div className="grid gap-2 rounded-2xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] p-3">
             <div className="flex items-center gap-2 text-sm">
-              <FileJson className="h-4 w-4 text-indigo-500" />
+              <FileJson className="h-4 w-4 text-brand-500" />
               <span className="min-w-0 flex-1 truncate font-semibold">{parsed.bundle.name}</span>
-              <span className="shrink-0 text-[13px] text-slate-500">{counts?.folders} folders · {counts?.questions} questions</span>
+              <span className="shrink-0 text-[13px] text-slate-500 dark:text-[#9aa3b2]">{counts?.folders} folders · {counts?.questions} questions</span>
             </div>
             {errs.length ? (
               <div className="grid gap-1">
                 {errs.slice(0, 6).map((e, i) => (
-                  <div key={i} className="flex items-start gap-1.5 rounded-lg bg-red-50 px-2.5 py-1.5 text-[13px] text-red-800">
+                  <div key={i} className="flex items-start gap-1.5 rounded-lg bg-red-50 dark:bg-red-950 px-2.5 py-1.5 text-[13px] text-red-800 dark:text-red-200">
                     <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{e}
                   </div>
                 ))}
-                <div className="text-xs text-slate-400">Fix the file and pick it again — nothing imports with faults.</div>
+                <div className="text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Fix the file and pick it again — nothing imports with faults.</div>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[13px] font-medium text-emerald-800">
+              <div className="flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1.5 text-[13px] font-medium text-emerald-800 dark:text-emerald-200">
                 <CheckCircle2 className="h-4 w-4" /> Shape looks good — server re-validates every question.
               </div>
             )}

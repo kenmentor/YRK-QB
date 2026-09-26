@@ -48,10 +48,10 @@ export default function AdminReviews() {
         return (
           <Card key={p.id}>
             <CardHeader>
-              <div className="flex flex-wrap items-center gap-2"><Badge tone="in_review">{p.status}</Badge><Badge>{p.subject?.name}</Badge><span className="text-xs text-slate-400">by {p.contributor?.name} · {p.kind}</span></div>
+              <div className="flex flex-wrap items-center gap-2"><Badge tone="in_review">{p.status}</Badge><Badge>{p.subject?.name}</Badge><span className="text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">by {p.contributor?.name} · {p.kind}</span></div>
               <CardTitle className="break-words text-[16px]">{q.stem}</CardTitle>
               <CardDescription className="break-words">{(q.type ?? "").replace("_", " ")} · {q.difficulty} · {(q.explanation ?? "").slice(0, 120)}</CardDescription>
-              {p.message && <div className="text-[13px] text-slate-500">Contributor note: “{p.message}”</div>}
+              {p.message && <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">Contributor note: “{p.message}”</div>}
             </CardHeader>
             <CardContent className="grid gap-2">
               <Textarea placeholder="Message to contributor (optional)…" value={msg[p.id] ?? ""} onChange={(e) => setMsg({ ...msg, [p.id]: e.target.value })} />
@@ -67,7 +67,7 @@ export default function AdminReviews() {
       <Card><CardHeader><CardTitle>Taxonomy queue</CardTitle></CardHeader>
         <CardContent className="grid gap-2 text-sm">
           {queue.map((t) => (
-            <div key={t.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 px-3.5 py-2.5">
+            <div key={t.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3.5 py-2.5">
               <Badge tone="in_review">{t.kind}</Badge><span className="font-medium">{t.name}</span>
               <span className="ml-auto flex gap-2">
                 <Button size="sm" onClick={() => decideTaxonomy(t.id, "approve")}>Approve</Button>
@@ -75,7 +75,7 @@ export default function AdminReviews() {
               </span>
             </div>
           ))}
-          {!queue.length && <div className="text-slate-500">Queue empty.</div>}
+          {!queue.length && <div className="text-slate-500 dark:text-[#9aa3b2]">Queue empty.</div>}
         </CardContent>
       </Card>
     </div>

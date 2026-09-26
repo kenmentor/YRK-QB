@@ -109,7 +109,7 @@ export function SharedMark({ ownerName, overlay }: { ownerName?: string; overlay
     <span
       title={ownerName ? `Shared by ${ownerName}` : "Shared with you"}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm",
+        "inline-flex shrink-0 items-center justify-center rounded-full border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-500 dark:text-[#9aa3b2] shadow-sm",
         overlay ? "absolute bottom-2 right-2 h-6 w-6" : "h-5 w-5"
       )}
     >
@@ -192,12 +192,12 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
 
   if (!total) {
     return (
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] shadow-soft">
         {view === "details" && <HeaderRow />}
         <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
           <FolderOpen className="h-12 w-12 text-slate-200" strokeWidth={1.25} />
-          <div className="text-sm text-slate-500">This folder is empty.</div>
-          <div className="text-xs text-slate-400">Drag files here to move them, or use New above.</div>
+          <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">This folder is empty.</div>
+          <div className="text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Drag files here to move them, or use New above.</div>
         </div>
         <StatusBar text="0 items" />
       </div>
@@ -206,7 +206,7 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
 
   if (view === "tiles") {
     return (
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft" onClick={() => setMenu(null)}>
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] shadow-soft" onClick={() => setMenu(null)}>
         <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 lg:grid-cols-4">
           {folders.map((f) => (
             <div
@@ -218,16 +218,16 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
               onDrop={dropOn(f.id)}
               onClick={(e) => { e.stopPropagation(); clickRow(f.id, () => onOpenFolder(f.id, f.ownerId ?? null)); }}
               onDoubleClick={() => onOpenFolder(f.id, f.ownerId ?? null)}
-              className={cn("group relative cursor-default overflow-hidden rounded-xl border bg-white transition",
-                dropTarget === f.id ? "border-indigo-400 ring-2 ring-indigo-300" :
-                selected === f.id ? "border-indigo-400 ring-1 ring-indigo-300" : "border-slate-200 hover:shadow-soft")}
+              className={cn("group relative cursor-default overflow-hidden rounded-xl border bg-white dark:bg-[var(--yrk-surface-elevated)] transition",
+                dropTarget === f.id ? "border-brand-400 ring-2 ring-brand-300" :
+                selected === f.id ? "border-brand-400 ring-1 ring-brand-300" : "border-slate-200 dark:border-[var(--yrk-border-subtle)] hover:shadow-soft")}
             >
-              <div className="relative flex h-28 items-center justify-center bg-slate-50">
+              <div className="relative flex h-28 items-center justify-center bg-slate-50 dark:bg-[var(--yrk-surface-canvas)]">
                 <Folder className="h-12 w-12 text-amber-500" fill="#fcd34d" strokeWidth={1.25} />
                 {f.shared && <SharedMark ownerName={f.ownerName} overlay />}
               </div>
-              <div className="truncate px-3 pt-2 text-center text-[13px] font-medium text-slate-700">{f.name}</div>
-              <div className="truncate px-3 pb-2 text-center text-[11px] text-slate-400">{f.shared ? `Folder · ${f.ownerName ?? sharedBy ?? "shared"}` : "Folder"}</div>
+              <div className="truncate px-3 pt-2 text-center text-[13px] font-medium text-slate-700 dark:text-[#c6ccd6]">{f.name}</div>
+              <div className="truncate px-3 pb-2 text-center text-[11px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{f.shared ? `Folder · ${f.ownerName ?? sharedBy ?? "shared"}` : "Folder"}</div>
               <TileMenu id={f.id} menu={menu} setMenu={setMenu} show={folderMenu(f).length > 1} items={folderMenu(f)} />
             </div>
           ))}
@@ -240,16 +240,16 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
                 onDragStart={(e) => startDrag(e, { kind: "file", id: q.id })}
                 onClick={(e) => { e.stopPropagation(); clickRow(q.id, () => onOpenFile(q.id)); }}
                 onDoubleClick={() => onOpenFile(q.id)}
-                className={cn("group relative cursor-default overflow-hidden rounded-xl border bg-white transition",
-                  selected === q.id ? "border-indigo-400 ring-1 ring-indigo-300" : "border-slate-200 hover:shadow-soft")}
+                className={cn("group relative cursor-default overflow-hidden rounded-xl border bg-white dark:bg-[var(--yrk-surface-elevated)] transition",
+                  selected === q.id ? "border-brand-400 ring-1 ring-brand-300" : "border-slate-200 dark:border-[var(--yrk-border-subtle)] hover:shadow-soft")}
               >
-                <div className="relative flex h-28 items-center justify-center bg-slate-50">
-                  <Icon className="h-10 w-10 text-indigo-400" strokeWidth={1.5} />
+                <div className="relative flex h-28 items-center justify-center bg-slate-50 dark:bg-[var(--yrk-surface-canvas)]">
+                  <Icon className="h-10 w-10 text-brand-400" strokeWidth={1.5} />
                   {q.shared && <SharedMark ownerName={sharedBy} overlay />}
                 </div>
                 <div className="px-3 pb-1 pt-2 text-center">
-                  <div className="truncate text-[13px] font-medium text-slate-700">{q.stem}</div>
-                  <div className="mt-0.5 truncate text-[11px] capitalize text-slate-400">{typeLabel(q.type)} · {q.difficulty}</div>
+                  <div className="truncate text-[13px] font-medium text-slate-700 dark:text-[#c6ccd6]">{q.stem}</div>
+                  <div className="mt-0.5 truncate text-[11px] capitalize text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{typeLabel(q.type)} · {q.difficulty}</div>
                 </div>
                 <TileMenu id={q.id} menu={menu} setMenu={setMenu} show={fileMenu(q.id).length > 1} items={fileMenu(q.id)} />
               </div>
@@ -262,7 +262,7 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft" onClick={() => setMenu(null)}>
+    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] shadow-soft" onClick={() => setMenu(null)}>
       <HeaderRow />
       <div>
         {folders.map((f) => (
@@ -275,20 +275,20 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
             onDrop={dropOn(f.id)}
             onClick={(e) => { e.stopPropagation(); clickRow(f.id, () => onOpenFolder(f.id, f.ownerId ?? null)); }}
             onDoubleClick={() => onOpenFolder(f.id, f.ownerId ?? null)}
-            className={cn("group relative grid min-h-[44px] cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]",
-              dropTarget === f.id ? "bg-indigo-100 ring-1 ring-inset ring-indigo-300" :
-              selected === f.id ? "bg-indigo-50 hover:bg-indigo-50" : "hover:bg-slate-50")}
+            className={cn("group relative grid min-h-[44px] cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]",
+              dropTarget === f.id ? "bg-brand-100 ring-1 ring-inset ring-brand-300" :
+              selected === f.id ? "bg-brand-50 hover:bg-brand-50" : "hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]")}
           >
             <span className="flex min-w-0 items-center gap-2.5">
               <Folder className="h-5 w-5 shrink-0 text-amber-500 sm:h-[18px] sm:w-[18px]" fill="#fcd34d" strokeWidth={1.75} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] text-slate-800 sm:text-sm">{f.name}</span>
-                <span className="block truncate text-xs text-slate-400 sm:hidden">Folder{f.shared ? ` · ${f.ownerName ?? "shared"}` : ""} · {fmtDate(f.createdAt)}</span>
+                <span className="block truncate text-[15px] text-slate-800 dark:text-[var(--yrk-text-primary)] sm:text-sm">{f.name}</span>
+                <span className="block truncate text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)] sm:hidden">Folder{f.shared ? ` · ${f.ownerName ?? "shared"}` : ""} · {fmtDate(f.createdAt)}</span>
               </span>
               {f.shared && <SharedMark ownerName={f.ownerName} />}
             </span>
-            <span className="hidden truncate text-[13px] text-slate-500 sm:block">File folder{f.shared ? ` · ${f.ownerName ?? ""}` : ""}</span>
-            <span className="hidden truncate text-[13px] text-slate-500 sm:block">{fmtDate(f.createdAt)}</span>
+            <span className="hidden truncate text-[13px] text-slate-500 dark:text-[#9aa3b2] sm:block">File folder{f.shared ? ` · ${f.ownerName ?? ""}` : ""}</span>
+            <span className="hidden truncate text-[13px] text-slate-500 dark:text-[#9aa3b2] sm:block">{fmtDate(f.createdAt)}</span>
             <RowMenu id={f.id} menu={menu} setMenu={setMenu} selected={selected === f.id} show={folderMenu(f).length > 1} items={folderMenu(f)} />
           </div>
         ))}
@@ -301,18 +301,18 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
               onDragStart={(e) => startDrag(e, { kind: "file", id: q.id })}
               onClick={(e) => { e.stopPropagation(); clickRow(q.id, () => onOpenFile(q.id)); }}
               onDoubleClick={() => onOpenFile(q.id)}
-              className={cn("group relative grid min-h-[44px] cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]", selected === q.id ? "bg-indigo-50 hover:bg-indigo-50" : "hover:bg-slate-50")}
+              className={cn("group relative grid min-h-[44px] cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]", selected === q.id ? "bg-brand-50 hover:bg-brand-50" : "hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]")}
             >
               <span className="flex min-w-0 items-center gap-2.5">
-                <Icon className="h-5 w-5 shrink-0 text-indigo-500 sm:h-[18px] sm:w-[18px]" strokeWidth={1.75} />
+                <Icon className="h-5 w-5 shrink-0 text-brand-500 sm:h-[18px] sm:w-[18px]" strokeWidth={1.75} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] text-slate-800 sm:text-sm">{q.stem}</span>
-                  <span className="block truncate text-xs capitalize text-slate-400 sm:hidden">{typeLabel(q.type)} · {q.difficulty}</span>
+                  <span className="block truncate text-[15px] text-slate-800 dark:text-[var(--yrk-text-primary)] sm:text-sm">{q.stem}</span>
+                  <span className="block truncate text-xs capitalize text-slate-400 dark:text-[var(--yrk-text-tertiary)] sm:hidden">{typeLabel(q.type)} · {q.difficulty}</span>
                 </span>
                 {q.shared && <SharedMark ownerName={sharedBy} />}
               </span>
-              <span className="hidden truncate text-[13px] capitalize text-slate-500 sm:block">{typeLabel(q.type)} question</span>
-              <span className="hidden truncate text-[13px] text-slate-500 sm:block">{fmtDate(q.createdAt)}</span>
+              <span className="hidden truncate text-[13px] capitalize text-slate-500 dark:text-[#9aa3b2] sm:block">{typeLabel(q.type)} question</span>
+              <span className="hidden truncate text-[13px] text-slate-500 dark:text-[#9aa3b2] sm:block">{fmtDate(q.createdAt)}</span>
               <RowMenu id={q.id} menu={menu} setMenu={setMenu} selected={selected === q.id} show={fileMenu(q.id).length > 1} items={fileMenu(q.id)} />
             </div>
           );
@@ -325,7 +325,7 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
 
 function HeaderRow() {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-b border-slate-200 bg-slate-50/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 border-b border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-slate-50/80 dark:bg-white/[0.04] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-[var(--yrk-text-tertiary)] sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]">
       <span>Name</span>
       <span className="hidden sm:block">Type</span>
       <span className="hidden sm:block">Date modified</span>
@@ -336,9 +336,9 @@ function HeaderRow() {
 
 function StatusBar({ text, sel }: { text: string; sel?: string | null }) {
   return (
-    <div className="flex items-center gap-2 border-t border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs text-slate-500">
+    <div className="flex items-center gap-2 border-t border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-slate-50/80 dark:bg-white/[0.04] px-3 py-1.5 text-xs text-slate-500 dark:text-[#9aa3b2]">
       <span className="truncate">{text}</span>
-      {sel && <span className="hidden truncate border-l border-slate-200 pl-2 sm:block">“{sel}”</span>}
+      {sel && <span className="hidden truncate border-l border-slate-200 dark:border-[var(--yrk-border-subtle)] pl-2 sm:block">“{sel}”</span>}
     </div>
   );
 }
@@ -355,15 +355,15 @@ function RowMenu({ id, menu, setMenu, selected, show, items }: {
   return (
     <>
       <button
-        className={cn("rounded-md p-2 transition hover:bg-slate-200/70 hover:text-slate-700 sm:p-1", menu === id || selected ? "text-slate-500 opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
+        className={cn("rounded-md p-2 transition hover:bg-slate-200/70 hover:text-slate-700 dark:text-[#c6ccd6] sm:p-1", menu === id || selected ? "text-slate-500 dark:text-[#9aa3b2] opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
         onClick={(e) => { e.stopPropagation(); setMenu(menu === id ? null : id); }}
       >
         <MoreVertical className="h-4 w-4" />
       </button>
       {menu === id && (
-        <div className="absolute right-2 top-9 z-20 grid w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lift" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute right-2 top-9 z-20 grid w-44 overflow-hidden rounded-lg border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] py-1 shadow-lift" onClick={(e) => e.stopPropagation()}>
           {items.map((it) => (
-            <button key={it.label} className={cn("px-3 py-2 text-left text-[13px] hover:bg-slate-50", it.danger && "text-red-600 hover:bg-red-50")} onClick={() => { setMenu(null); it.run(); }}>{it.label}</button>
+            <button key={it.label} className={cn("px-3 py-2 text-left text-[13px] hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]", it.danger && "text-red-600 hover:bg-red-50 dark:bg-red-950")} onClick={() => { setMenu(null); it.run(); }}>{it.label}</button>
           ))}
         </div>
       )}
@@ -382,15 +382,15 @@ function TileMenu({ id, menu, setMenu, show, items }: {
   return (
     <>
       <button
-        className={cn("absolute right-2 top-2 rounded-md p-2 transition hover:bg-slate-100 hover:text-slate-700 sm:p-1.5", menu === id ? "text-slate-500 opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
+        className={cn("absolute right-2 top-2 rounded-md p-2 transition hover:bg-slate-100 dark:hover:bg-white/[0.07] hover:text-slate-700 dark:text-[#c6ccd6] sm:p-1.5", menu === id ? "text-slate-500 dark:text-[#9aa3b2] opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
         onClick={(e) => { e.stopPropagation(); setMenu(menu === id ? null : id); }}
       >
         <MoreVertical className="h-4 w-4" />
       </button>
       {menu === id && (
-        <div className="absolute right-2 top-10 z-20 grid w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lift" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute right-2 top-10 z-20 grid w-44 overflow-hidden rounded-lg border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] py-1 shadow-lift" onClick={(e) => e.stopPropagation()}>
           {items.map((it) => (
-            <button key={it.label} className={cn("px-3 py-2 text-left text-[13px] hover:bg-slate-50", it.danger && "text-red-600 hover:bg-red-50")} onClick={() => { setMenu(null); it.run(); }}>{it.label}</button>
+            <button key={it.label} className={cn("px-3 py-2 text-left text-[13px] hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]", it.danger && "text-red-600 hover:bg-red-50 dark:bg-red-950")} onClick={() => { setMenu(null); it.run(); }}>{it.label}</button>
           ))}
         </div>
       )}

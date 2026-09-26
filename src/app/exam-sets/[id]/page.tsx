@@ -74,7 +74,7 @@ export default function ExamSetBuilder({ params }: { params: { id: string } }) {
     if (!res.ok) toast((await res.json()).error);
   }
 
-  if (!set) return <div className="text-sm text-slate-500">Loading exam set…</div>;
+  if (!set) return <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">Loading exam set…</div>;
 
   return (
     <div className="grid gap-5">
@@ -105,13 +105,13 @@ export default function ExamSetBuilder({ params }: { params: { id: string } }) {
         <div className="grid gap-4">
           <Card><CardHeader><CardTitle className="text-sm">Add from the bank</CardTitle></CardHeader>
             <CardContent className="grid gap-2">
-              <div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />
                 <Input className="pl-9" placeholder="Search stem… (2+ letters)" value={q} onChange={(e) => setQ(e.target.value)} /></div>
               {pool.map((x) => {
                 const Icon = fileIcon(x.type);
                 return (
-                  <div key={x.id} className="flex items-center gap-2.5 rounded-xl border border-slate-100 px-3 py-2 text-sm">
-                    <Icon className="h-4 w-4 shrink-0 text-indigo-500" />
+                  <div key={x.id} className="flex items-center gap-2.5 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3 py-2 text-sm">
+                    <Icon className="h-4 w-4 shrink-0 text-brand-500" />
                     <span className="min-w-0 flex-1 truncate">{x.stem}</span>
                     <Badge>{typeLabel(x.type)}</Badge>
                     <Button size="sm" variant="outline" onClick={() => add(x)}>Add</Button>
@@ -127,14 +127,14 @@ export default function ExamSetBuilder({ params }: { params: { id: string } }) {
               {questions.length ? questions.map((x, i) => {
                 const Icon = fileIcon(x.type);
                 return (
-                  <div key={x.id} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm">
-                    <span className="w-6 shrink-0 text-center font-bold tabular-nums text-slate-400">{i + 1}</span>
-                    <Icon className="h-4 w-4 shrink-0 text-indigo-500" />
+                  <div key={x.id} className="flex items-center gap-2 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3 py-2 text-sm">
+                    <span className="w-6 shrink-0 text-center font-bold tabular-nums text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{i + 1}</span>
+                    <Icon className="h-4 w-4 shrink-0 text-brand-500" />
                     <span className="min-w-0 flex-1 truncate">{x.stem}</span>
                     <Badge>{typeLabel(x.type)}</Badge>
-                    <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 disabled:opacity-30 sm:p-1.5" disabled={i === 0} title="Move up" onClick={() => move(i, -1)}><ArrowUp className="h-3.5 w-3.5" /></button>
-                    <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 disabled:opacity-30 sm:p-1.5" disabled={i === questions.length - 1} title="Move down" onClick={() => move(i, 1)}><ArrowDown className="h-3.5 w-3.5" /></button>
-                    <button className="rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 sm:p-1.5" title="Remove" onClick={() => remove(i)}><X className="h-3.5 w-3.5" /></button>
+                    <button className="rounded-md p-2 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 sm:p-1.5" disabled={i === 0} title="Move up" onClick={() => move(i, -1)}><ArrowUp className="h-3.5 w-3.5" /></button>
+                    <button className="rounded-md p-2 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 sm:p-1.5" disabled={i === questions.length - 1} title="Move down" onClick={() => move(i, 1)}><ArrowDown className="h-3.5 w-3.5" /></button>
+                    <button className="rounded-md p-2 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-red-50 dark:bg-red-950 hover:text-red-600 sm:p-1.5" title="Remove" onClick={() => remove(i)}><X className="h-3.5 w-3.5" /></button>
                   </div>
                 );
               }) : <EmptyState title="Empty set" hint="Search the bank above and add questions." />}

@@ -177,10 +177,10 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
 
   if (!meta) return (
     <div className="grid gap-4">
-      <div className="h-36 animate-pulse rounded-3xl bg-slate-100" />
-      <div className="h-12 animate-pulse rounded-2xl bg-slate-100" />
+      <div className="h-36 animate-pulse rounded-3xl bg-slate-100 dark:bg-white/[0.07]" />
+      <div className="h-12 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/[0.07]" />
       <div className="grid gap-2">
-        {[0, 1, 2, 3].map((i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-slate-100" />)}
+        {[0, 1, 2, 3].map((i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-white/[0.07]" />)}
       </div>
     </div>
   );
@@ -196,13 +196,13 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
         </>} tone="dark" />
 
       {/* steps: numbered, free to jump — Next/Next/Done without lock-in */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-soft">
+      <div className="flex items-center gap-1 overflow-x-auto rounded-2xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] p-1.5 shadow-soft">
         {TABS.map((t, i) => (
           <button key={t.v} onClick={() => setTab(t.v)}
-            className={cn("flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition", tab === t.v ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-100")}>
-            <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black", tab === t.v ? "bg-white/20" : "bg-slate-100 text-slate-500")}>{i + 1}</span>
+            className={cn("flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold transition", tab === t.v ? "bg-slate-900 text-white" : "text-slate-500 dark:text-[#9aa3b2] hover:bg-slate-100 dark:hover:bg-white/[0.07]")}>
+            <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black", tab === t.v ? "bg-white/20" : "bg-slate-100 dark:bg-white/[0.07] text-slate-500 dark:text-[#9aa3b2]")}>{i + 1}</span>
             <t.icon className="h-4 w-4" />{t.l}
-            {t.v === "content" && !!assembly.length && <span className={cn("rounded-full px-1.5 text-[11px] font-bold", tab === t.v ? "bg-white/20" : "bg-slate-100")}>{assembly.length}</span>}
+            {t.v === "content" && !!assembly.length && <span className={cn("rounded-full px-1.5 text-[11px] font-bold", tab === t.v ? "bg-white/20" : "bg-slate-100 dark:bg-white/[0.07]")}>{assembly.length}</span>}
           </button>
         ))}
       </div>
@@ -232,7 +232,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
             <CardContent className="grid gap-2">
               <Button variant="accent" onClick={() => setShowExplorer(true)}><FolderPlus className="h-4 w-4" /> Browse bank</Button>
               <Button variant="outline" onClick={() => setShowNewQ(true)}><FilePlus className="h-4 w-4" /> New question</Button>
-              <div className="text-xs leading-relaxed text-slate-400">Check files and folders across My bank, Shared, and Public tabs. New questions file to your root.</div>
+              <div className="text-xs leading-relaxed text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Check files and folders across My bank, Shared, and Public tabs. New questions file to your root.</div>
             </CardContent>
           </Card>
         </div>
@@ -271,7 +271,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
                     const next = on ? meta.modes.filter((x) => x !== m.v) : [...meta.modes, m.v];
                     if (!next.length) { toast("Keep at least one mode."); return; }
                     touchMeta({ modes: next });
-                  }} className={cn("rounded-lg border px-2.5 py-1.5 text-[13px] font-semibold transition", on ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 text-slate-500")}>{m.l}</button>;
+                  }} className={cn("rounded-lg border px-2.5 py-1.5 text-[13px] font-semibold transition", on ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 dark:border-[var(--yrk-border-subtle)] text-slate-500 dark:text-[#9aa3b2]")}>{m.l}</button>;
                 })}
               </div>
             </div>
@@ -307,12 +307,12 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
               </div>
             )}
             {shares.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm">
-                <span className="min-w-0 flex-1 truncate">{s.user?.name ?? s.userId} <span className="text-xs text-slate-400">· {s.role}</span></span>
-                {isOwner && <button className="rounded-md p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-600" onClick={() => unshare(s.id)}><X className="h-4 w-4" /></button>}
+              <div key={s.id} className="flex items-center gap-2 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3 py-2 text-sm">
+                <span className="min-w-0 flex-1 truncate">{s.user?.name ?? s.userId} <span className="text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">· {s.role}</span></span>
+                {isOwner && <button className="rounded-md p-1.5 text-slate-300 hover:bg-red-50 dark:bg-red-950 hover:text-red-600" onClick={() => unshare(s.id)}><X className="h-4 w-4" /></button>}
               </div>
             ))}
-            {!shares.length && <div className="text-[13px] text-slate-400">Only you so far.</div>}
+            {!shares.length && <div className="text-[13px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Only you so far.</div>}
             {isOwner && <button className="mt-1 flex w-fit items-center gap-1.5 text-[13px] text-red-600 hover:underline" onClick={removeActivity}><Trash2 className="h-3.5 w-3.5" /> Delete activity</button>}
           </CardContent>
         </Card>
@@ -359,7 +359,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
 }
 
 function StepBtn({ disabled, title, onClick, children }: { disabled?: boolean; title: string; onClick: () => void; children: React.ReactNode }) {
-  return <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 disabled:opacity-30 sm:p-1.5" disabled={disabled} title={title} onClick={onClick}>{children}</button>;
+  return <button className="rounded-md p-2 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 sm:p-1.5" disabled={disabled} title={title} onClick={onClick}>{children}</button>;
 }
 
 const STEP_ORDER = ["content", "present", "rules", "people"];
@@ -373,12 +373,12 @@ function StepNav({ tab, setTab, dirty, publishing, onPublish, onDone }: {
   const i = Math.max(0, STEP_ORDER.indexOf(tab));
   const last = i === STEP_ORDER.length - 1;
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-soft">
+    <div className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] px-3 py-2.5 shadow-soft">
       <Button variant="outline" size="sm" disabled={i === 0} onClick={() => setTab(STEP_ORDER[i - 1])}>Back</Button>
       <div className="flex flex-1 items-center justify-center gap-1.5">
         {STEP_ORDER.map((s, j) => (
           <button key={s} title={s} onClick={() => setTab(s)}
-            className={cn("h-2 rounded-full transition", j === i ? "w-6 bg-slate-900" : j < i ? "w-2 bg-slate-400" : "w-2 bg-slate-200 hover:bg-slate-300")} />
+            className={cn("h-2 rounded-full transition", j === i ? "w-6 bg-slate-900" : j < i ? "w-2 bg-slate-400" : "w-2 bg-slate-200 dark:bg-white/10 hover:bg-slate-300")} />
         ))}
       </div>
       {last ? (
@@ -397,14 +397,14 @@ function QRow({ n, q, id, first, last, onUp, onDown, onRemove }: {
 }) {
   const Icon = q ? fileIcon(q.type) : FilePlus;
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3 py-2 text-sm">
-      <span className="w-6 shrink-0 text-center font-bold tabular-nums text-slate-400">{n}</span>
-      <Icon className="h-4 w-4 shrink-0 text-indigo-500" />
+    <div className="flex items-center gap-2 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] px-3 py-2 text-sm">
+      <span className="w-6 shrink-0 text-center font-bold tabular-nums text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{n}</span>
+      <Icon className="h-4 w-4 shrink-0 text-brand-500" />
       <span className="min-w-0 flex-1 truncate">{q?.stem ?? id}</span>
       {q && <Badge>{typeLabel(q.type)}</Badge>}
       <StepBtn disabled={first} title="Move up" onClick={onUp}><ArrowUp className="h-3.5 w-3.5" /></StepBtn>
       <StepBtn disabled={last} title="Move down" onClick={onDown}><ArrowDown className="h-3.5 w-3.5" /></StepBtn>
-      <button className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Remove" onClick={onRemove}><X className="h-3.5 w-3.5" /></button>
+      <button className="rounded-md p-1.5 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-red-50 dark:bg-red-950 hover:text-red-600" title="Remove" onClick={onRemove}><X className="h-3.5 w-3.5" /></button>
     </div>
   );
 }
@@ -416,29 +416,29 @@ function FolderRow({ n, name, open, items, first, last, onToggle, onUp, onDown, 
   return (
     <div className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50/40">
       <div className="flex items-center gap-2 px-3 py-2 text-sm">
-        <span className="w-6 shrink-0 text-center font-bold tabular-nums text-slate-400">{n}</span>
+        <span className="w-6 shrink-0 text-center font-bold tabular-nums text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{n}</span>
         <button onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-          {open ? <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" /> : <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />}
+          {open ? <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" /> : <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />}
           <Folder className="h-4 w-4 shrink-0 text-amber-500" fill="#fcd34d" />
           <span className="min-w-0 flex-1 truncate font-semibold">{name}</span>
           <Badge>folder · expands live</Badge>
         </button>
         <StepBtn disabled={first} title="Move up" onClick={onUp}><ArrowUp className="h-3.5 w-3.5" /></StepBtn>
         <StepBtn disabled={last} title="Move down" onClick={onDown}><ArrowDown className="h-3.5 w-3.5" /></StepBtn>
-        <button className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Remove" onClick={onRemove}><X className="h-3.5 w-3.5" /></button>
+        <button className="rounded-md p-1.5 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-red-50 dark:bg-red-950 hover:text-red-600" title="Remove" onClick={onRemove}><X className="h-3.5 w-3.5" /></button>
       </div>
       {open && (
-        <div className="grid gap-1 border-t border-amber-100 bg-white px-3 py-2">
+        <div className="grid gap-1 border-t border-amber-100 bg-white dark:bg-[var(--yrk-surface-elevated)] px-3 py-2">
           {(items ?? []).map((x) => {
             const Icon = fileIcon(x.type);
             return (
-              <div key={x.id} className="flex items-center gap-2 text-[13px] text-slate-600">
-                <Icon className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <div key={x.id} className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-[var(--yrk-text-secondary)]">
+                <Icon className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />
                 <span className="min-w-0 flex-1 truncate">{x.stem}</span>
               </div>
             );
           })}
-          {!(items ?? []).length && <div className="text-[13px] text-slate-400">Empty or unreachable folder.</div>}
+          {!(items ?? []).length && <div className="text-[13px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Empty or unreachable folder.</div>}
         </div>
       )}
     </div>

@@ -47,7 +47,7 @@ export default function BankDetail({ params }: { params: { id: string } }) {
     else { toast(decision === "approved" ? "Approved, editor added to this question." : "Declined gracefully."); load(); }
   }
 
-  if (!data) return <div className="text-sm text-slate-500">Loading question…</div>;
+  if (!data) return <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">Loading question…</div>;
   const q = data.question;
   const isCreator = me && q.creatorId === me.id;
   const opts = JSON.parse(q.options || "[]") as string[];
@@ -62,7 +62,7 @@ export default function BankDetail({ params }: { params: { id: string } }) {
           <Card><CardHeader><CardTitle>Answer & guide</CardTitle><CardDescription>{opts.length ? `Options: ${opts.join(" · ")}` : "Theory question, written answer"}</CardDescription></CardHeader>
             <CardContent className="grid gap-2 text-sm">
               <div><Badge tone="approved">Answer: {correct.join(", ") || "see guide"}</Badge></div>
-              <p className="leading-relaxed text-slate-600">{q.explanation}</p>
+              <p className="leading-relaxed text-slate-600 dark:text-[var(--yrk-text-secondary)]">{q.explanation}</p>
               <div className="flex flex-wrap gap-2 pt-1">
                 {(isCreator || !q.creatorId) && <Button onClick={toggle} disabled={busy}>{q.allowApplications ? "Close applications" : "Make appliable"}</Button>}
                 <a href="/bank"><Button variant="secondary">Back to bank</Button></a>
@@ -78,15 +78,15 @@ export default function BankDetail({ params }: { params: { id: string } }) {
             </Card>
           )}
           {!isCreator && !q.allowApplications && (
-            <Card><CardContent className="flex flex-wrap items-center gap-3 p-5 text-sm text-slate-500">Not open for editing.<a href="/bank"><Button variant="secondary" size="sm">Find open questions</Button></a></CardContent></Card>
+            <Card><CardContent className="flex flex-wrap items-center gap-3 p-5 text-sm text-slate-500 dark:text-[#9aa3b2]">Not open for editing.<a href="/bank"><Button variant="secondary" size="sm">Find open questions</Button></a></CardContent></Card>
           )}
         </div>
         <Card><CardHeader><CardTitle>Applications {isCreator ? "· inbox" : "· mine"}</CardTitle><CardDescription>{isCreator ? "Approve editors you trust." : "Only you can see your own."}</CardDescription></CardHeader>
           <CardContent className="grid gap-2 text-sm">
             {apps.map((a) => (
-              <div key={a.id} className="rounded-xl border border-slate-100 p-3">
+              <div key={a.id} className="rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] p-3">
                 <div className="flex items-center justify-between gap-2"><span className="font-semibold">{a.applicant?.name}</span><Badge tone={a.status === "pending" ? "in_review" : a.status === "approved" ? "approved" : "closed"}>{a.status}</Badge></div>
-                <div className="mt-1 text-slate-500">“{a.message}”</div>
+                <div className="mt-1 text-slate-500 dark:text-[#9aa3b2]">“{a.message}”</div>
                 {isCreator && a.status === "pending" && (
                   <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => decide(a.id, "approved")}>Approve</Button><Button size="sm" variant="outline" onClick={() => decide(a.id, "rejected")}>Decline</Button></div>
                 )}

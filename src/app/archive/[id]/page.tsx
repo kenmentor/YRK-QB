@@ -44,17 +44,17 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
     });
   }, [params.id]);
 
-  if (gone) return <div className="grid gap-3 py-10 text-center"><div className="font-bold">Artifact not found or private.</div><a href="/archive" className="text-sm text-indigo-600 underline">Back to archive</a></div>;
+  if (gone) return <div className="grid gap-3 py-10 text-center"><div className="font-bold">Artifact not found or private.</div><a href="/archive" className="text-sm text-brand-600 underline">Back to archive</a></div>;
   if (!meta) {
     return (
       <div className="grid gap-5">
-        <div className="h-36 animate-pulse rounded-3xl bg-slate-100" />
+        <div className="h-36 animate-pulse rounded-3xl bg-slate-100 dark:bg-white/[0.07]" />
         <div className="grid gap-2">
-          <div className="h-6 w-2/3 animate-pulse rounded-md bg-slate-100" />
-          <div className="h-4 w-full animate-pulse rounded-md bg-slate-100" />
-          <div className="h-4 w-1/2 animate-pulse rounded-md bg-slate-100" />
+          <div className="h-6 w-2/3 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" />
+          <div className="h-4 w-full animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" />
+          <div className="h-4 w-1/2 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" />
         </div>
-        <div className="h-48 animate-pulse rounded-3xl bg-slate-100" />
+        <div className="h-48 animate-pulse rounded-3xl bg-slate-100 dark:bg-white/[0.07]" />
       </div>
     );
   }
@@ -80,11 +80,11 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
         <Banner preset={meta.banner} title={meta.title} className="h-36" />
         <CardContent className="grid gap-2 p-5 sm:p-6">
           <h1 className="text-2xl font-bold tracking-tight">{meta.title}</h1>
-          <div className="text-sm text-slate-500">
-            by <span className="font-semibold text-slate-700">{meta.ownerName}</span>
+          <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">
+            by <span className="font-semibold text-slate-700 dark:text-[#c6ccd6]">{meta.ownerName}</span>
             {!!meta.contributors.length && <> · contributors: {meta.contributors.map((c) => c.name).join(", ")}</>}
           </div>
-          {meta.details && <p className="max-w-2xl text-[15px] leading-relaxed text-slate-600">{meta.details}</p>}
+          {meta.details && <p className="max-w-2xl text-[15px] leading-relaxed text-slate-600 dark:text-[var(--yrk-text-secondary)]">{meta.details}</p>}
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge>{meta.questionCount} questions</Badge>
             <Badge tone="draft">{catLabel(meta.category)}{meta.sector ? ` · ${meta.sector}` : ""}</Badge>
@@ -101,20 +101,20 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
               <Button key={m} variant={mode === m ? "default" : "outline"} onClick={() => { setMode(m); setAccepted(false); }}>{MODE_LABEL[m] ?? m}</Button>
             ))}
           </div>
-          <div className={cn("grid gap-2 rounded-2xl border p-4", accepted ? "border-emerald-300 bg-emerald-50/50" : "border-slate-200 bg-slate-50")}>
-            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">
+          <div className={cn("grid gap-2 rounded-2xl border p-4", accepted ? "border-emerald-300 bg-emerald-50/50" : "border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-slate-50 dark:bg-[var(--yrk-surface-canvas)]")}>
+            <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">
               {mode === "exam" ? "Test rules — set by the owner" : "Practice rules — set by the owner"}
             </div>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{rules}</p>
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-[#c6ccd6]">{rules}</p>
             <label className="flex cursor-pointer items-start gap-2.5 pt-1 text-sm">
-              <button onClick={() => setAccepted((a) => !a)} className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition", accepted ? "border-emerald-600 bg-emerald-500 text-white" : "border-slate-300 bg-white text-transparent hover:border-emerald-500")}>✓</button>
+              <button onClick={() => setAccepted((a) => !a)} className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition", accepted ? "border-emerald-600 bg-emerald-500 text-white" : "border-slate-300 dark:border-[var(--yrk-border-default)] bg-white dark:bg-[var(--yrk-surface-elevated)] text-transparent hover:border-emerald-500")}>✓</button>
               <span>I have read the rules{mode === "exam" ? " and accept the strict clock" : ""}.</span>
             </label>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="accent" size="lg" onClick={start} disabled={!accepted || !authLoaded}><Play className="h-4 w-4" /> {!authLoaded ? "Loading…" : me ? `Start ${MODE_LABEL[mode]}` : "Log in & start"}</Button>
-            {authLoaded && !me && <span className="self-center text-[13px] text-slate-400">Rounds record to your history, so an account is needed to play.</span>}
-            {accepted && me && <span className="flex items-center gap-1 self-center text-[13px] text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Rules accepted</span>}
+            {authLoaded && !me && <span className="self-center text-[13px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Rounds record to your history, so an account is needed to play.</span>}
+            {accepted && me && <span className="flex items-center gap-1 self-center text-[13px] text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4" /> Rules accepted</span>}
           </div>
         </CardContent>
       </Card>

@@ -181,11 +181,11 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     if (res.ok) load();
   }
 
-  if (!ws) return <div className="text-sm text-slate-500">Loading space…</div>;
+  if (!ws) return <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">Loading space…</div>;
   return (
     <div className="grid gap-5">
       <div className="overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-lift sm:p-8">
-        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-300">Workspace · your role: {myRole ?? "none"}</div>
+        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand-300">Workspace · your role: {myRole ?? "none"}</div>
         <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{ws.name}</h1>
         <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">{ws.focus}</p>
         <div className="mt-4 flex flex-wrap gap-1.5">
@@ -193,7 +193,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
             <span key={i} className="flex items-center gap-1.5 rounded-full bg-white/10 py-1 pl-2.5 pr-1.5 text-[11px] font-semibold text-slate-100">
               {m.user?.name ?? m.userId} · {m.role}
               {canInvite && m.userId !== me?.id && (
-                <button title={`Remove ${m.user?.name}`} onClick={() => removeMember(m.userId, m.user?.name ?? m.userId)} className="rounded-full px-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white">×</button>
+                <button title={`Remove ${m.user?.name}`} onClick={() => removeMember(m.userId, m.user?.name ?? m.userId)} className="rounded-full px-1.5 text-slate-400 dark:text-[var(--yrk-text-tertiary)] transition hover:bg-white/10 hover:text-white">×</button>
               )}
             </span>
           ))}
@@ -201,24 +201,24 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
         {canInvite ? (
           <div className="relative mt-5">
             <div className="flex flex-col gap-2 min-[420px]:flex-row">
-              <Input className="border-white/10 bg-white text-slate-900" placeholder="Invite by name or email…" value={inviteQ} onChange={(e) => setInviteQ(e.target.value)} />
+              <Input className="border-white/10 bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-900 dark:text-[var(--yrk-text-primary)]" placeholder="Invite by name or email…" value={inviteQ} onChange={(e) => setInviteQ(e.target.value)} />
               <select className="yrk-select w-auto" value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
                 <option value="editor">Editor</option><option value="reviewer">Reviewer (professor)</option><option value="owner">Owner</option>
               </select>
             </div>
             {!!suggest.length && (
-              <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-lift">
+              <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-900 dark:text-[var(--yrk-text-primary)] shadow-lift">
                 {suggest.map((u) => (
-                  <button key={u.id} className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition hover:bg-slate-50" onClick={() => invite(u.email)}>
-                    <span className="font-medium">{u.name} <span className="font-normal text-slate-400">· {u.email}</span></span><span className="text-xs text-slate-400">{u.role}</span>
+                  <button key={u.id} className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]" onClick={() => invite(u.email)}>
+                    <span className="font-medium">{u.name} <span className="font-normal text-slate-400 dark:text-[var(--yrk-text-tertiary)]">· {u.email}</span></span><span className="text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{u.role}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
-        ) : <div className="mt-4 text-xs text-slate-400">Only the owner can invite, ask the owner to add members.</div>}
+        ) : <div className="mt-4 text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Only the owner can invite, ask the owner to add members.</div>}
         {canMerge && <div className="mt-4 flex flex-wrap gap-2"><Button variant="accent" onClick={publishSet}>Publish approved set</Button><Button variant="outline" className="border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={deleteWorkspace}>Delete workspace</Button></div>}
-        {myRole && !canMerge && <div className="mt-4"><Button variant="ghost" size="sm" className="text-slate-400 hover:text-white" onClick={leave}>Leave workspace</Button></div>}
+        {myRole && !canMerge && <div className="mt-4"><Button variant="ghost" size="sm" className="text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:text-white" onClick={leave}>Leave workspace</Button></div>}
       </div>
 
       {/* Where this workspace lands in the bank: session > course > subject > topic */}
@@ -227,19 +227,19 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
           {[ws.destination?.session, ws.destination?.course, ws.destination?.subject, ws.destination?.topic].filter(Boolean).join("  ›  ") || "No destination yet, attach one so output lands in the right segment."}
         </CardDescription></CardHeader>
         <CardContent className="grid gap-2">
-          {(!progress || !progress.subjects.length) && <div className="text-sm text-slate-500">{progress?.note ?? "Loading build…"}</div>}
+          {(!progress || !progress.subjects.length) && <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">{progress?.note ?? "Loading build…"}</div>}
           {(progress?.subjects ?? []).map((s) => (
-            <div key={s.id} className="rounded-xl border border-slate-100 p-3">
+            <div key={s.id} className="rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] p-3">
               <div className="flex items-center justify-between text-sm"><span className="font-semibold">{s.name}</span>
-                <span className="flex items-center gap-2"><span className="text-xs text-slate-400">{s.topics.reduce((n, t) => n + t.published, 0)} in bank</span>
+                <span className="flex items-center gap-2"><span className="text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{s.topics.reduce((n, t) => n + t.published, 0)} in bank</span>
                 <a href={`/bank/subject/${s.id}`}><Button variant="ghost" size="sm">View subject</Button></a></span></div>
               {s.topics.map((t) => {
                 const total = t.draft + t.inReview + t.approved + t.published;
                 const pct = total ? Math.round((t.published / total) * 100) : 0;
                 return (
                   <div key={t.id} className="mt-2 text-[13px]">
-                    <div className="flex justify-between"><span>{t.name}</span><span className="text-slate-400">{t.published} bank · {t.inReview} review · {t.approved} ready · {t.draft} draft</span></div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} /></div>
+                    <div className="flex justify-between"><span>{t.name}</span><span className="text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{t.published} bank · {t.inReview} review · {t.approved} ready · {t.draft} draft</span></div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.07]"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} /></div>
                   </div>
                 );
               })}
@@ -255,13 +255,13 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
         <CardDescription>Published from here. Revise opens a linked draft, merging updates the original.</CardDescription></CardHeader>
         {showBank && <CardContent className="grid gap-2 text-sm">
           {bankQs.map((q) => (
-            <div key={q.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 px-3.5 py-2.5">
+            <div key={q.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3.5 py-2.5">
               <span className="min-w-0 flex-1 break-words">{q.stem}</span>
               <Badge tone={q.difficulty}>{q.difficulty}</Badge>
               {canEdit && <Button size="sm" variant="outline" onClick={() => revise(q)}>Revise</Button>}
             </div>
           ))}
-          {!bankQs.length && <div className="text-slate-500">Nothing published yet, approve and merge drafts above.</div>}
+          {!bankQs.length && <div className="text-slate-500 dark:text-[#9aa3b2]">Nothing published yet, approve and merge drafts above.</div>}
         </CardContent>}
       </Card>
 
@@ -270,9 +270,9 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
         <Card><CardHeader><CardTitle>Join requests ({joins.length})</CardTitle><CardDescription>People asking to become editor or reviewer.</CardDescription></CardHeader>
           <CardContent className="grid gap-2 text-sm">
             {joins.map((j) => (
-              <div key={j.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 px-3.5 py-2.5">
+              <div key={j.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3.5 py-2.5">
                 <span className="font-medium">{j.user?.name}</span><Badge>{j.role}</Badge>
-                <span className="text-slate-500">“{j.message}”</span>
+                <span className="text-slate-500 dark:text-[#9aa3b2]">“{j.message}”</span>
                 <span className="ml-auto flex gap-2">
                   <Button size="sm" onClick={() => decideJoin(j.id, "approve")}>Add</Button>
                   <Button size="sm" variant="outline" onClick={() => decideJoin(j.id, "decline")}>Decline</Button>
@@ -285,7 +285,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
 
       {canEdit ? (
         <QuestionEditor key={ws.drafts.length} topics={topics} submitLabel="Save draft" onSubmit={addDraft} />
-      ) : <div className="rounded-2xl border border-slate-200/80 bg-white p-5 text-sm text-slate-500 shadow-soft">Reviewers comment and approve below, editing is for editors.</div>}
+      ) : <div className="rounded-2xl border border-slate-200/80 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] p-5 text-sm text-slate-500 dark:text-[#9aa3b2] shadow-soft">Reviewers comment and approve below, editing is for editors.</div>}
 
       {(ws.drafts ?? []).map((d) => (
         <Card key={d.id} className={d.conflictBranch ? "border-amber-400" : ""}>
@@ -294,7 +294,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
               <div className="yrk-wrap min-w-0 flex-1 text-sm font-medium">{d.stem || "(empty)"} {d.conflictBranch && <span className="text-amber-600">· conflict</span>}</div>
               <Badge status={d.status} className="shrink-0">{d.status}</Badge>
             </div>
-            <div className="mt-1 text-xs text-slate-500">{d.type} · {d.difficulty}</div>
+            <div className="mt-1 text-xs text-slate-500 dark:text-[#9aa3b2]">{d.type} · {d.difficulty}</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {(["edit", "versions", "comments", "review"] as const).map((t) => {
                 if (t === "edit" && !canEdit) return null;
@@ -303,7 +303,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
               })}
               {canEdit && <Button variant="secondary" onClick={() => review(d.id, "request")}>Send for review</Button>}
               {canMerge && <Button onClick={() => mergeOne(d.id)}>Merge → bank</Button>}
-              {(canMerge || (me && d.authorId === me.id)) && <Button variant="ghost" size="sm" className="text-slate-400" onClick={() => deleteDraft(d.id)}>Delete</Button>}
+              {(canMerge || (me && d.authorId === me.id)) && <Button variant="ghost" size="sm" className="text-slate-400 dark:text-[var(--yrk-text-tertiary)]" onClick={() => deleteDraft(d.id)}>Delete</Button>}
             </div>
             {tab[d.id] === "edit" && canEdit && (
               <div className="mt-3">
@@ -323,7 +323,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button onClick={() => review(d.id, "review", "approved")}>Approve · “This is good”</Button>
                 <Button variant="outline" onClick={() => review(d.id, "review", "changes_requested")}>Request changes</Button>
-                <div className="text-xs text-slate-500">{(detail[d.id]?.reviews ?? []).map((r) => `${r.verdict}: ${r.comment}`).join(" · ")}</div>
+                <div className="text-xs text-slate-500 dark:text-[#9aa3b2]">{(detail[d.id]?.reviews ?? []).map((r) => `${r.verdict}: ${r.comment}`).join(" · ")}</div>
               </div>
             )}
           </CardContent>

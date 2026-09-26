@@ -55,14 +55,14 @@ export default function ExamSetsPage() {
             <Card key={s.id} className="transition hover:shadow-lift">
               <CardContent className="grid gap-2 p-5">
                 <div className="flex items-start gap-2.5">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50"><FileStack className="h-5 w-5 text-indigo-600" /></span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50"><FileStack className="h-5 w-5 text-brand-600" /></span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-bold">{s.title}</div>
-                    <div className="truncate text-[13px] text-slate-500">{[s.institution, s.department].filter(Boolean).join(" · ") || "No institution"}</div>
+                    <div className="truncate text-[13px] text-slate-500 dark:text-[#9aa3b2]">{[s.institution, s.department].filter(Boolean).join(" · ") || "No institution"}</div>
                   </div>
-                  <button className="rounded-lg p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-600" title="Delete" onClick={() => remove(s.id, s.title)}><Trash2 className="h-4 w-4" /></button>
+                  <button className="rounded-lg p-1.5 text-slate-300 hover:bg-red-50 dark:bg-red-950 hover:text-red-600" title="Delete" onClick={() => remove(s.id, s.title)}><Trash2 className="h-4 w-4" /></button>
                 </div>
-                <div className="text-[13px] text-slate-500">{[s.domain, s.level, s.term, s.subject].filter(Boolean).join(" · ") || "No profile yet"} · {countOf(s)} question{countOf(s) === 1 ? "" : "s"}</div>
+                <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">{[s.domain, s.level, s.term, s.subject].filter(Boolean).join(" · ") || "No profile yet"} · {countOf(s)} question{countOf(s) === 1 ? "" : "s"}</div>
                 <div className="flex flex-wrap gap-2 pt-1">
                   <a href={`/exam-sets/${s.id}`}><Button size="sm" variant="secondary">Open builder <ArrowRight className="h-3.5 w-3.5" /></Button></a>
                   {!!countOf(s) && <a href={`/play?set=${s.id}&mode=exam`}><Button size="sm"><Play className="h-3.5 w-3.5" /> Play as Test</Button></a>}
@@ -75,9 +75,9 @@ export default function ExamSetsPage() {
 
       {showNew && (
         <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-slate-900/50 p-4" onClick={() => setShowNew(false)}>
-          <div className="grid w-full max-w-lg gap-3 rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
+          <div className="grid w-full max-w-lg gap-3 rounded-3xl bg-white dark:bg-[var(--yrk-surface-elevated)] p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between"><div className="font-bold">New exam set</div>
-              <button onClick={() => setShowNew(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button></div>
+              <button onClick={() => setShowNew(false)} className="rounded-lg p-1.5 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]"><X className="h-4 w-4" /></button></div>
             <label className="yrk-label">Exam title *<Input placeholder="e.g. SSS II Physics — First Term Exam" value={f.title} onChange={set("title")} /></label>
             <div className="grid grid-cols-2 gap-3">
               <label className="yrk-label">Institution<Input placeholder="e.g. Yaba College" value={f.institution} onChange={set("institution")} /></label>

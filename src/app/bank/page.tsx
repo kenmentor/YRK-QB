@@ -366,11 +366,11 @@ export default function BankPage() {
     <div className="grid gap-4">
       {/* tab switch */}
       <div className="flex items-center gap-2">
-        <div className="flex rounded-xl bg-slate-100 p-1 text-[13px] font-semibold">
-          <button onClick={() => setTab("bank")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "bank" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>My Bank</button>
-          <button onClick={() => setTab("explore")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "explore" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>Explore</button>
+        <div className="flex rounded-xl bg-slate-100 dark:bg-white/[0.07] p-1 text-[13px] font-semibold">
+          <button onClick={() => setTab("bank")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "bank" ? "bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-900 dark:text-[var(--yrk-text-primary)] shadow-sm" : "text-slate-500 dark:text-[#9aa3b2]"}`}>My Bank</button>
+          <button onClick={() => setTab("explore")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "explore" ? "bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-900 dark:text-[var(--yrk-text-primary)] shadow-sm" : "text-slate-500 dark:text-[#9aa3b2]"}`}>Explore</button>
         </div>
-        {tab === "bank" && authLoaded && !me && <span className="text-[13px] text-slate-400"><a className="text-indigo-600 underline" href="/login">Log in</a> to use your bank.</span>}
+        {tab === "bank" && authLoaded && !me && <span className="text-[13px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]"><a className="text-brand-600 underline" href="/login">Log in</a> to use your bank.</span>}
         {tab === "bank" && sharedMode && <Badge tone="in_review">Viewing {ownerName}&rsquo;s bank · {access}</Badge>}
       </div>
 
@@ -389,11 +389,11 @@ export default function BankPage() {
           <div className="grid gap-0">
             {/* Explorer command bar: back / up / refresh + address bar + search */}
             <Card className="rounded-b-none border-b-0"><CardContent className="flex items-center gap-1.5 p-2.5">
-              <button title="Back" disabled={crumbs.length < 2} onClick={() => { const p = crumbs[crumbs.length - 2]; nav(p?.id ?? null, p && p.ownerId && me?.id !== p.ownerId ? p.ownerId : null); }} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button>
-              <button title="Up one level" disabled={crumbs.length < 2} onClick={() => { const p = crumbs[crumbs.length - 2]; nav(p?.id ?? null, p && p.ownerId && me?.id !== p.ownerId ? p.ownerId : null); }} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
-              <button title="Refresh" onClick={() => { loadTree(); loadContents(folderId, ownerId); }} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"><RefreshCw className="h-4 w-4" /></button>
+              <button title="Back" disabled={crumbs.length < 2} onClick={() => { const p = crumbs[crumbs.length - 2]; nav(p?.id ?? null, p && p.ownerId && me?.id !== p.ownerId ? p.ownerId : null); }} className="rounded-lg p-2 text-slate-500 dark:text-[#9aa3b2] transition hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30"><ArrowLeft className="h-4 w-4" /></button>
+              <button title="Up one level" disabled={crumbs.length < 2} onClick={() => { const p = crumbs[crumbs.length - 2]; nav(p?.id ?? null, p && p.ownerId && me?.id !== p.ownerId ? p.ownerId : null); }} className="rounded-lg p-2 text-slate-500 dark:text-[#9aa3b2] transition hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30"><ArrowUp className="h-4 w-4" /></button>
+              <button title="Refresh" onClick={() => { loadTree(); loadContents(folderId, ownerId); }} className="rounded-lg p-2 text-slate-500 dark:text-[#9aa3b2] transition hover:bg-slate-100 dark:hover:bg-white/[0.07]"><RefreshCw className="h-4 w-4" /></button>
               {/* address bar */}
-              <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/60 px-2 py-1.5 text-[13px]">
+              <nav className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-lg border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-slate-50/60 dark:bg-white/[0.04] px-2 py-1.5 text-[13px]">
                 {crumbs.map((c, i) => {
                   const cOwner = c.ownerId && me?.id !== c.ownerId ? c.ownerId : null;
                   const key = `${c.id ?? "__root__"}:${c.ownerId}`;
@@ -411,22 +411,22 @@ export default function BankPage() {
                       } : undefined}
                     >
                       {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-slate-300" />}
-                      <button onClick={() => nav(c.id, cOwner)} className={`flex items-center gap-1.5 rounded-md px-1.5 py-0.5 ${dropCrumb === key ? "bg-indigo-100 ring-1 ring-indigo-300" : ""} ${i === crumbs.length - 1 ? "font-semibold text-slate-900" : "text-slate-600 hover:bg-slate-200/60"}`}>
-                        {i === 0 && <Database className={`h-3.5 w-3.5 ${sharedMode ? "text-emerald-600" : "text-indigo-500"}`} />}{c.name}
+                      <button onClick={() => nav(c.id, cOwner)} className={`flex items-center gap-1.5 rounded-md px-1.5 py-0.5 ${dropCrumb === key ? "bg-brand-100 ring-1 ring-brand-300" : ""} ${i === crumbs.length - 1 ? "font-semibold text-slate-900 dark:text-[var(--yrk-text-primary)]" : "text-slate-600 dark:text-[var(--yrk-text-secondary)] hover:bg-slate-200/60"}`}>
+                        {i === 0 && <Database className={`h-3.5 w-3.5 ${sharedMode ? "text-emerald-600" : "text-brand-500"}`} />}{c.name}
                       </button>
                     </span>
                   );
                 })}
               </nav>
               <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />
                 <Input className="w-44 pl-9" placeholder={`Search ${crumbs[crumbs.length - 1]?.name ?? ""}`} value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
             </CardContent></Card>
             {/* ribbon: icon-led actions, fits 360px with zero scroll */}
-            <div className="grid gap-2 rounded-b-xl border border-t-0 border-slate-200 bg-white px-2.5 py-2.5 shadow-soft">
+            <div className="grid gap-2 rounded-b-xl border border-t-0 border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] px-2.5 py-2.5 shadow-soft">
               <div className="relative sm:hidden">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />
                 <Input className="w-full pl-9" placeholder={`Search ${crumbs[crumbs.length - 1]?.name ?? ""}`} value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
               <div className="flex items-center gap-1.5">
@@ -443,13 +443,13 @@ export default function BankPage() {
                     <FolderPlus className="h-5 w-5" />
                   </RibbonIcon>
                 )}
-                <span className="min-w-0 flex-1 truncate text-xs text-slate-400">
+                <span className="min-w-0 flex-1 truncate text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">
                   {crumbs.length > 1 ? `${folders.length + files.length} items` : ""}
                 </span>
                 {/* view switcher */}
-                <div className="flex shrink-0 rounded-lg border border-slate-200 p-0.5">
-                  <button title="Details view" onClick={() => setViewAndSave("details")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "details" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><List className="h-4 w-4" /></button>
-                  <button title="Tiles view" onClick={() => setViewAndSave("tiles")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "tiles" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><LayoutGrid className="h-4 w-4" /></button>
+                <div className="flex shrink-0 rounded-lg border border-slate-200 dark:border-[var(--yrk-border-subtle)] p-0.5">
+                  <button title="Details view" onClick={() => setViewAndSave("details")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "details" ? "bg-slate-900 text-white" : "text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:text-slate-600 dark:text-[var(--yrk-text-secondary)]"}`}><List className="h-4 w-4" /></button>
+                  <button title="Tiles view" onClick={() => setViewAndSave("tiles")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "tiles" ? "bg-slate-900 text-white" : "text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:text-slate-600 dark:text-[var(--yrk-text-secondary)]"}`}><LayoutGrid className="h-4 w-4" /></button>
                 </div>
                 <div className="relative shrink-0">
                   <RibbonIcon title="More actions" onClick={() => setMoreOpen((v) => !v)}>
@@ -458,19 +458,19 @@ export default function BankPage() {
                   {moreOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setMoreOpen(false)} />
-                      <div className="absolute right-0 top-11 z-20 grid w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                      <div className="absolute right-0 top-11 z-20 grid w-44 overflow-hidden rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] py-1 shadow-lift">
                         {canCreate && !(sharedMode && !folderId) && (
-                          <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50" onClick={() => { setMoreOpen(false); setImportScope({ parentId: folderId, name: crumbs[crumbs.length - 1]?.name ?? "My Bank" }); }}>
-                            <Upload className="h-4 w-4 text-slate-400" /> Import files
+                          <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]" onClick={() => { setMoreOpen(false); setImportScope({ parentId: folderId, name: crumbs[crumbs.length - 1]?.name ?? "My Bank" }); }}>
+                            <Upload className="h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" /> Import files
                           </button>
                         )}
                         {access === "owner" && (
-                          <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50" onClick={() => { setMoreOpen(false); openShare(); }}>
-                            <Share2 className="h-4 w-4 text-slate-400" /> Share this {folderId ? "folder" : "bank"}
+                          <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]" onClick={() => { setMoreOpen(false); openShare(); }}>
+                            <Share2 className="h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" /> Share this {folderId ? "folder" : "bank"}
                           </button>
                         )}
-                        <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50" onClick={() => { setMoreOpen(false); loadTree(); loadContents(folderId, ownerId); }}>
-                          <RefreshCw className="h-4 w-4 text-slate-400" /> Refresh
+                        <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]" onClick={() => { setMoreOpen(false); loadTree(); loadContents(folderId, ownerId); }}>
+                          <RefreshCw className="h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" /> Refresh
                         </button>
                       </div>
                     </>
@@ -481,11 +481,11 @@ export default function BankPage() {
 
             <div className="mt-3">
             {loading ? (
-              <div className="grid gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-soft">
+              <div className="grid gap-2 overflow-hidden rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] p-3 shadow-soft">
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-2.5">
-                    <span className="h-[18px] w-[18px] shrink-0 animate-pulse rounded-md bg-slate-100" />
-                    <span className="h-4 flex-1 animate-pulse rounded-md bg-slate-100" style={{ width: `${82 - i * 9}%` }} />
+                    <span className="h-[18px] w-[18px] shrink-0 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" />
+                    <span className="h-4 flex-1 animate-pulse rounded-md bg-slate-100 dark:bg-white/[0.07]" style={{ width: `${82 - i * 9}%` }} />
                   </div>
                 ))}
               </div>
@@ -563,7 +563,7 @@ export default function BankPage() {
       {/* move modal */}
       {moveTarget && (
         <Modal onClose={() => setMoveTarget(null)} title="Move question to…">
-          <select className="yrk-select w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" value={moveDest} onChange={(e) => setMoveDest(e.target.value)}>
+          <select className="yrk-select w-full rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] px-3 py-2.5 text-sm" value={moveDest} onChange={(e) => setMoveDest(e.target.value)}>
             {!sharedMode && <option value="">My Bank (root)</option>}
             {bankFolders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
@@ -574,10 +574,10 @@ export default function BankPage() {
       {/* folders drawer (mobile) */}
       {showTree && (
         <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4 lg:hidden" onClick={() => setShowTree(false)}>
-          <div className="grid max-h-[85dvh] w-full gap-1 overflow-y-auto rounded-3xl bg-white p-4 shadow-lift" onClick={(e) => e.stopPropagation()}>
+          <div className="grid max-h-[85dvh] w-full gap-1 overflow-y-auto rounded-3xl bg-white dark:bg-[var(--yrk-surface-elevated)] p-4 shadow-lift" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-1 pb-1">
               <div className="text-sm font-bold">Folders</div>
-              <button onClick={() => setShowTree(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+              <button onClick={() => setShowTree(false)} className="rounded-lg p-2 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]"><X className="h-4 w-4" /></button>
             </div>
             <div onClick={() => setShowTree(false)}>
               <BankNav myTree={myTree} incoming={incoming} folderId={folderId} ownerId={ownerId}
@@ -599,12 +599,12 @@ export default function BankPage() {
       {/* share modal (scoped to a folder, or the viewed root) */}
       {showShare && (
         <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={() => setShowShare(false)}>
-          <div className="grid max-h-[90dvh] w-full max-w-md gap-3 overflow-y-auto rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
+          <div className="grid max-h-[90dvh] w-full max-w-md gap-3 overflow-y-auto rounded-3xl bg-white dark:bg-[var(--yrk-surface-elevated)] p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between gap-2">
               <div className="truncate text-sm font-bold">Share {shareScope ? `“${[...folders, ...tree].find((f) => f.id === shareScope)?.name ?? "folder"}”` : "bank root"}</div>
-              <button onClick={() => setShowShare(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+              <button onClick={() => setShowShare(false)} className="rounded-lg p-1.5 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]"><X className="h-4 w-4" /></button>
             </div>
-            <div className="text-[13px] text-slate-500">Viewer reads · reviewer reads + adds · editor manages. They must already have an account.</div>
+            <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">Viewer reads · reviewer reads + adds · editor manages. They must already have an account.</div>
             <div className="flex gap-2">
               <Input className="flex-1" placeholder="teammate@example.com" value={shareEmail} onChange={(e) => setShareEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && invite()} />
               <Select className="w-auto" value={shareRole} onChange={(e) => setShareRole(e.target.value)}>
@@ -613,17 +613,17 @@ export default function BankPage() {
               <Button variant="accent" onClick={invite}><UserPlus className="h-4 w-4" /></Button>
             </div>
             {shareScope && (
-              <div className="grid gap-2 rounded-2xl border border-slate-100 p-3">
+              <div className="grid gap-2 rounded-2xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] p-3">
                 <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
-                  <span className="font-semibold">Public folder <span className="block text-xs font-normal text-slate-400">Listed in the archive for everyone.</span></span>
+                  <span className="font-semibold">Public folder <span className="block text-xs font-normal text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Listed in the archive for everyone.</span></span>
                   <button onClick={async () => {
                     const next = !(pub?.isPublic ?? false);
                     const res = await fetch(`/api/drive/folders/${shareScope}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isPublic: next }) });
                     if (!res.ok) { toast((await res.json()).error); return; }
                     setPub({ isPublic: next, publicAccess: pub?.publicAccess ?? "view" });
                     toast(next ? "Folder is public." : "Folder is private again.");
-                  }} className={`relative h-6 w-11 shrink-0 rounded-full transition ${pub?.isPublic ? "bg-emerald-500" : "bg-slate-200"}`}>
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${pub?.isPublic ? "left-[22px]" : "left-0.5"}`} />
+                  }} className={`relative h-6 w-11 shrink-0 rounded-full transition ${pub?.isPublic ? "bg-emerald-500" : "bg-slate-200 dark:bg-white/10"}`}>
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white dark:bg-[var(--yrk-surface-elevated)] shadow transition ${pub?.isPublic ? "left-[22px]" : "left-0.5"}`} />
                   </button>
                 </label>
                 {pub?.isPublic && (
@@ -642,19 +642,19 @@ export default function BankPage() {
               </div>
             )}
             <div className="grid gap-1.5">
-              {shareRows.map((s) => (                <div key={s.id} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3 py-2 text-sm">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-xs font-bold text-indigo-700">{s.user?.name?.charAt(0).toUpperCase() ?? "?"}</span>
-                  <span className="min-w-0 flex-1 truncate">{s.user?.name ?? s.userId}<span className="block truncate text-xs text-slate-400">{s.user?.email}</span></span>
+              {shareRows.map((s) => (                <div key={s.id} className="flex items-center gap-2 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3 py-2 text-sm">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700">{s.user?.name?.charAt(0).toUpperCase() ?? "?"}</span>
+                  <span className="min-w-0 flex-1 truncate">{s.user?.name ?? s.userId}<span className="block truncate text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{s.user?.email}</span></span>
                   <Select className="w-auto" value={s.role} onChange={async (e) => {
                     const res = await fetch("/api/drive/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: s.user?.email, role: e.target.value, folderId: shareScope }) });
                     if (!res.ok) toast((await res.json()).error); else { toast("Role updated."); loadShares(); }
                   }}>
                     <option value="viewer">Viewer</option><option value="reviewer">Reviewer</option><option value="editor">Editor</option>
                   </Select>
-                  <button className="rounded-md p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-600" title="Remove" onClick={() => unshare(s.id)}><X className="h-4 w-4" /></button>
+                  <button className="rounded-md p-1.5 text-slate-300 hover:bg-red-50 dark:bg-red-950 hover:text-red-600" title="Remove" onClick={() => unshare(s.id)}><X className="h-4 w-4" /></button>
                 </div>
               ))}
-              {!shareRows.length && <div className="text-[13px] text-slate-400">Only you — invite someone above.</div>}
+              {!shareRows.length && <div className="text-[13px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Only you — invite someone above.</div>}
             </div>
           </div>
         </div>
@@ -677,24 +677,24 @@ function BankNav({ myTree, incoming, folderId, ownerId, sharedMode, meId, canCre
   return (
     <div className="grid gap-3">
       <div>
-        <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Quick access</div>
+        <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Quick access</div>
         <DriveTree folders={myTree} currentId={sharedMode ? null : folderId} onSelect={onTreeSelect} onDropMove={onMoveItem} />
       </div>
       {!!incoming.length && (
         <div>
-          <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Shared with me</div>
+          <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Shared with me</div>
           <div className="grid gap-0.5">
             {incoming.map((s) => (
               <div key={s.id} className="group flex items-center gap-1">
                 <button
                   onClick={() => onNav(s.folderId, s.ownerId)}
-                  className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition sm:py-1.5 sm:text-[13px] ${folderId === s.folderId && ownerId === s.ownerId ? "bg-indigo-50 font-semibold text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`}
+                  className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition sm:py-1.5 sm:text-[13px] ${folderId === s.folderId && ownerId === s.ownerId ? "bg-brand-50 font-semibold text-brand-800" : "text-slate-600 dark:text-[var(--yrk-text-secondary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]"}`}
                 >
-                  <Users className="h-4 w-4 shrink-0 text-slate-400 sm:h-3.5 sm:w-3.5" />
+                  <Users className="h-4 w-4 shrink-0 text-slate-400 dark:text-[var(--yrk-text-tertiary)] sm:h-3.5 sm:w-3.5" />
                   <span className="min-w-0 flex-1 truncate">{s.folderName ?? `${s.ownerName}'s bank`}</span>
-                  <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400">{s.role}</span>
+                  <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{s.role}</span>
                 </button>
-                <button title="Leave" onClick={() => onLeave(s.id)} className="rounded-md p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 sm:opacity-0 sm:p-1 sm:group-hover:opacity-100"><LogOut className="h-4 w-4 sm:h-3.5 sm:w-3.5" /></button>
+                <button title="Leave" onClick={() => onLeave(s.id)} className="rounded-md p-2 text-slate-300 transition hover:bg-red-50 dark:bg-red-950 hover:text-red-600 sm:opacity-0 sm:p-1 sm:group-hover:opacity-100"><LogOut className="h-4 w-4 sm:h-3.5 sm:w-3.5" /></button>
               </div>
             ))}
           </div>
@@ -711,7 +711,7 @@ function RibbonIcon({ title, onClick, primary, className, children }: {
 }) {
   return (
     <button title={title} aria-label={title} onClick={onClick}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-95 ${primary ? "border-indigo-600 bg-indigo-600 text-white shadow-sm hover:bg-indigo-500" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"} ${className ?? ""}`}>
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-95 ${primary ? "border-brand-600 bg-brand-600 text-white shadow-sm hover:bg-brand-500" : "border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-600 dark:text-[var(--yrk-text-secondary)] hover:border-slate-300 dark:hover:border-[var(--yrk-border-default)] dark:border-[var(--yrk-border-default)] hover:bg-slate-50 dark:hover:bg-white/[0.05] dark:bg-[var(--yrk-surface-canvas)]"} ${className ?? ""}`}>
       {children}
     </button>
   );
@@ -719,10 +719,10 @@ function RibbonIcon({ title, onClick, primary, className, children }: {
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {  return (
     <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
-      <div className="grid w-full max-w-sm gap-3 rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
+      <div className="grid w-full max-w-sm gap-3 rounded-3xl bg-white dark:bg-[var(--yrk-surface-elevated)] p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-2">
           <div className="truncate text-sm font-bold">{title}</div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]"><X className="h-4 w-4" /></button>
         </div>
         {children}
       </div>
@@ -738,15 +738,15 @@ function ExploreTab() {
   return (
     <div className="grid gap-4">
       <Card><CardContent className="flex gap-2 p-4">
-        <div className="relative flex-1"><Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" /><Input className="pl-10" placeholder="Search the shared bank…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="relative flex-1"><Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" /><Input className="pl-10" placeholder="Search the shared bank…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
       </CardContent></Card>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((s) => (
           <Card key={s.id} className="transition hover:shadow-lift">
             <CardContent className="grid gap-2 p-5">
-              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-indigo-600">{s.session} · {s.course}</div>
-              <div className="flex items-center gap-2 text-lg font-bold"><BookOpen className="h-4 w-4 text-indigo-600" />{s.name}</div>
-              <div className="text-sm text-slate-500">{s.description} · {s.topics} topics · {s.questionCount} questions</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-600">{s.session} · {s.course}</div>
+              <div className="flex items-center gap-2 text-lg font-bold"><BookOpen className="h-4 w-4 text-brand-600" />{s.name}</div>
+              <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">{s.description} · {s.topics} topics · {s.questionCount} questions</div>
               <a href={`/bank/subject/${s.id}`}><Button variant="secondary" size="sm">Open subject <ArrowRight className="h-3.5 w-3.5" /></Button></a>
             </CardContent>
           </Card>

@@ -59,19 +59,19 @@ export function DriveTree({ folders, currentId, counts, onSelect, onDropMove }: 
         <div key={f.id}>
           <div className="flex items-center gap-0.5">
             {hasKids ? (
-              <button onClick={() => toggle(f.id)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:h-6 sm:w-6" title={expanded ? "Collapse" : "Expand"}>
+              <button onClick={() => toggle(f.id)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07] hover:text-slate-600 dark:text-[var(--yrk-text-secondary)] sm:h-6 sm:w-6" title={expanded ? "Collapse" : "Expand"}>
                 {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               </button>
             ) : <span className="w-6 shrink-0" />}
             <button
               onClick={() => onSelect(f.id, f.ownerId ?? null)}
-              className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition sm:py-1.5 sm:text-[13px]", active ? "bg-indigo-50 font-semibold text-indigo-700" : dropId === f.id ? "bg-indigo-100 ring-1 ring-indigo-300" : "text-slate-600 hover:bg-slate-100")}
+              className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition sm:py-1.5 sm:text-[13px]", active ? "bg-brand-50 font-semibold text-brand-700" : dropId === f.id ? "bg-brand-100 ring-1 ring-brand-300" : "text-slate-600 dark:text-[var(--yrk-text-secondary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]")}
               style={{ paddingLeft: `${8 + depth * 2}px` }}
               {...dropProps(f.id, f.id)}
             >
-              {active ? <FolderOpen className="h-4 w-4 shrink-0 text-indigo-500" /> : <Folder className="h-4 w-4 shrink-0 text-slate-400" />}
+              {active ? <FolderOpen className="h-4 w-4 shrink-0 text-brand-500" /> : <Folder className="h-4 w-4 shrink-0 text-slate-400 dark:text-[var(--yrk-text-tertiary)]" />}
               <span className="truncate">{f.name}</span>
-              {!!counts?.[f.id] && <span className="ml-auto shrink-0 rounded-full bg-slate-100 px-1.5 text-[10px] font-bold text-slate-500">{counts[f.id]}</span>}
+              {!!counts?.[f.id] && <span className="ml-auto shrink-0 rounded-full bg-slate-100 dark:bg-white/[0.07] px-1.5 text-[10px] font-bold text-slate-500 dark:text-[#9aa3b2]">{counts[f.id]}</span>}
             </button>
           </div>
           {hasKids && expanded && <div>{renderLevel(f.id, depth + 1)}</div>}
@@ -84,10 +84,10 @@ export function DriveTree({ folders, currentId, counts, onSelect, onDropMove }: 
     <div className="grid gap-0.5">
       <button
         onClick={() => onSelect(null)}
-        className={cn("flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition", currentId === null ? "bg-indigo-50 font-semibold text-indigo-700" : dropId === "__root__" ? "bg-indigo-100 ring-1 ring-indigo-300" : "text-slate-600 hover:bg-slate-100")}
+        className={cn("flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition", currentId === null ? "bg-brand-50 font-semibold text-brand-700" : dropId === "__root__" ? "bg-brand-100 ring-1 ring-brand-300" : "text-slate-600 dark:text-[var(--yrk-text-secondary)] hover:bg-slate-100 dark:hover:bg-white/[0.07]")}
         {...dropProps(null)}
       >
-        <Database className="ml-6 h-4 w-4 shrink-0 text-indigo-500" />
+        <Database className="ml-6 h-4 w-4 shrink-0 text-brand-500" />
         <span className="truncate">My Bank</span>
       </button>
       {renderLevel(null, 0)}

@@ -17,13 +17,13 @@ export function MobileNav() {
   const path = usePathname();
 
   return (
-    <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/92 backdrop-blur-md md:hidden">
+    <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 dark:border-[var(--yrk-border-subtle)] bg-white/92 dark:bg-[#16181d]/92 backdrop-blur-md md:hidden">
       <div className="grid grid-cols-4 px-2 pt-1.5">
         {TABS.map((t) => {
           const active = !!path && (path === t.href || path.startsWith(t.href + "/"));
           return (
             <a key={t.href} href={t.href}
-              className={cn("flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold transition active:scale-95", active ? "text-indigo-600" : "text-slate-400")}>
+              className={cn("flex min-h-[56px] flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold transition active:scale-95", active ? "text-brand-600" : "text-slate-400 dark:text-[var(--yrk-text-tertiary)]")}>
               <t.icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.25 : 1.75} />
               {t.label}
             </a>

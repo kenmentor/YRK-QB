@@ -27,10 +27,10 @@ export default function NotificationsPage() {
       <Card><CardHeader><CardTitle>Recent</CardTitle><CardDescription>Newest first.</CardDescription></CardHeader>
         <CardContent className="grid gap-2">
           {items.map((n) => (
-            <button key={n.id} onClick={() => open(n)} className="flex min-w-0 items-start gap-3 rounded-xl border border-slate-100 px-4 py-3 text-left transition hover:shadow-soft">
-              <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-slate-200" : "bg-indigo-600"}`} />
+            <button key={n.id} onClick={() => open(n)} className="flex min-w-0 items-start gap-3 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-4 py-3 text-left transition hover:shadow-soft">
+              <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read ? "bg-slate-200 dark:bg-white/10" : "bg-brand-600"}`} />
               <span className="min-w-0"><span className="flex flex-wrap items-center gap-2 text-sm font-semibold">{n.title} <Badge tone={n.kind === "decision" ? "approved" : "in_review"}>{n.kind}</Badge></span>
-              <span className="block break-words text-[13px] text-slate-500">{n.body}</span></span>
+              <span className="block break-words text-[13px] text-slate-500 dark:text-[#9aa3b2]">{n.body}</span></span>
             </button>
           ))}
           {!items.length && <EmptyState title="All quiet" hint="Decisions land here." />}

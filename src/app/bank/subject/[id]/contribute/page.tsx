@@ -48,7 +48,7 @@ export default function ContributePage({ params }: { params: { id: string } }) {
     toast("Committed, add another below or track it under My commits.");
   }
 
-  if (!subject) return <div className="text-sm text-slate-500">Loading…</div>;
+  if (!subject) return <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">Loading…</div>;
   return (
     <div className="grid gap-5">
       <PageHero eyebrow={`Contribute · ${subject.course}`} title={`Add to ${subject.name}`} description="Read the terms, craft your question, commit, an admin reviews and commits it to the bank." />
@@ -58,9 +58,9 @@ export default function ContributePage({ params }: { params: { id: string } }) {
         <CardContent className="flex flex-wrap items-center gap-3">
           <Button variant={accepted ? "secondary" : "default"} onClick={() => setShowTerms(true)}><ScrollText className="h-4 w-4" /> {accepted ? "Terms accepted, read again" : "Read terms"}</Button>
           {accepted
-            ? <span className="text-[13px] font-medium text-emerald-700">Accepted, you can commit.</span>
-            : <span className="text-[13px] text-slate-400">Nothing commits until you OK the terms.</span>}
-          <a href="/terms" target="_blank" className="ml-auto text-[13px] font-medium text-indigo-600 hover:underline">Dedicated terms page</a>
+            ? <span className="text-[13px] font-medium text-emerald-700 dark:text-emerald-300">Accepted, you can commit.</span>
+            : <span className="text-[13px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Nothing commits until you OK the terms.</span>}
+          <a href="/terms" target="_blank" className="ml-auto text-[13px] font-medium text-brand-600 hover:underline">Dedicated terms page</a>
         </CardContent>
       </Card>
       {showTerms && <TermsModal onAccept={() => { setAccepted(true); setShowTerms(false); toast("Terms accepted, craft your question."); }} onClose={() => setShowTerms(false)} />}
@@ -79,7 +79,7 @@ export default function ContributePage({ params }: { params: { id: string } }) {
             <CardHeader><CardTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-600" /> Commit this question?</CardTitle>
               <CardDescription>An admin will review and commit it to {subject.name}. You’ll get a notification: committed (+message), cancelled with a message, or cancelled with the default note.</CardDescription></CardHeader>
             <CardContent className="grid gap-3 text-sm">
-              <div className="rounded-xl bg-slate-50 p-3"><div className="font-medium">{pending.stem || "(empty stem)"}</div><div className="text-xs text-slate-500">{pending.type.replace("_", " ")} · {pending.difficulty}</div></div>
+              <div className="rounded-xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] p-3"><div className="font-medium">{pending.stem || "(empty stem)"}</div><div className="text-xs text-slate-500 dark:text-[#9aa3b2]">{pending.type.replace("_", " ")} · {pending.difficulty}</div></div>
               <div className="flex gap-2">
                 <Button variant="accent" onClick={commit}>OK, commit for review</Button>
                 <Button variant="ghost" onClick={() => setShowModal(false)}>Keep editing</Button>

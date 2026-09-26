@@ -15,7 +15,7 @@ export default function SubjectPage({ params }: { params: { id: string } }) {
     privateCrews: number;
   } | null>(null);
   useEffect(() => { fetch(`/api/subjects/${params.id}`).then((r) => r.json()).then(setD); }, [params.id]);
-  if (!d) return <div className="text-sm text-slate-500">Loading subject…</div>;
+  if (!d) return <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">Loading subject…</div>;
   return (
     <div className="grid gap-5">
       <PageHero eyebrow={`${d.subject.session} · ${d.subject.course}`} title={d.subject.name}
@@ -28,7 +28,7 @@ export default function SubjectPage({ params }: { params: { id: string } }) {
       {(!!d.builders.length || !!d.privateCrews) && (
         <Card><CardHeader><CardTitle>Built by crews</CardTitle><CardDescription>Workspaces feeding this subject{d.privateCrews ? `, plus ${d.privateCrews} private ${d.privateCrews === 1 ? "crew" : "crews"}` : ""}.</CardDescription></CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {d.builders.map((b) => <span key={b.id} className="rounded-full bg-slate-100 px-3 py-1.5 text-[13px] font-medium">{b.name} · {b.memberCount}</span>)}
+            {d.builders.map((b) => <span key={b.id} className="rounded-full bg-slate-100 dark:bg-white/[0.07] px-3 py-1.5 text-[13px] font-medium">{b.name} · {b.memberCount}</span>)}
             <a href="/workspaces" className="ml-auto"><Button variant="outline" size="sm">Join a crew</Button></a>
           </CardContent>
         </Card>

@@ -11,10 +11,11 @@ describe("auth criticals", () => {
     const auth = read("src/lib/auth.ts");
     assert.ok(!auth.includes('headers.get("x-user-email")'), "header fallback must be gone from auth");
   });
-  it("register whitelists roles + throttles", () => {
-    const r = read("src/app/api/auth/register/route.ts");
-    assert.ok(r.includes('"admin"') && r.includes("403"), "admin self-register must 403");
-    assert.ok(r.includes("rateLimited"), "register must be rate limited");
+  it("signup removed: login-only with throttled login", () => {
+    assert.ok(!fs.existsSync(path.join(root, "src/app/register")), "register page gone");
+    assert.ok(!fs.existsSync(path.join(root, "src/app/api/auth/register")), "register API gone");
+    const l = read("src/app/api/auth/login/route.ts");
+    assert.ok(l.includes("rateLimited"), "login must be rate limited");
   });
   it("login throttled, cookie secure in prod, no hardcoded prod secret", () => {
     const l = read("src/app/api/auth/login/route.ts");

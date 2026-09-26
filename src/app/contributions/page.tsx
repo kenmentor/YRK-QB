@@ -66,7 +66,7 @@ export default function CommitsPage() {
               {editing === c.id ? (
                 (() => {
                   const p = parsed(c);
-                  if (!p) return <div className="text-sm text-slate-500">Could not load payload.</div>;
+                  if (!p) return <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">Could not load payload.</div>;
                   return (<>
                     <Textarea placeholder="Note for the admin…" value={note} onChange={(e) => setNote(e.target.value)} />
                     <QuestionEditor key={c.id} topics={topics.filter((t) => t.subject === c.subjectName)} submitLabel="Save changes"

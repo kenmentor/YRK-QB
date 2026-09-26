@@ -248,13 +248,13 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
       {/* mobile: slide between compose and preview instead of stacking */}
-      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-soft lg:hidden">
+      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white dark:bg-[var(--yrk-surface-elevated)] p-1.5 shadow-soft lg:hidden">
         <button onClick={() => setMobilePane("compose")}
-          className={cn("rounded-xl px-3 py-2 text-[13px] font-bold transition", mobilePane === "compose" ? "bg-slate-900 text-white" : "text-slate-500")}>
+          className={cn("rounded-xl px-3 py-2 text-[13px] font-bold transition", mobilePane === "compose" ? "bg-slate-900 text-white" : "text-slate-500 dark:text-[#9aa3b2]")}>
           Compose
         </button>
         <button onClick={() => setMobilePane("preview")}
-          className={cn("flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-bold transition", mobilePane === "preview" ? "bg-slate-900 text-white" : "text-slate-500")}>
+          className={cn("flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-bold transition", mobilePane === "preview" ? "bg-slate-900 text-white" : "text-slate-500 dark:text-[#9aa3b2]")}>
           <Eye className="h-4 w-4" /> Preview
         </button>
       </div>
@@ -273,7 +273,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
             <span className="ml-auto flex items-center gap-1" title={`Difficulty ${difficultyIndex}/5 (${bandOf(difficultyIndex)})`}>
               {[1, 2, 3, 4, 5].map((i) => (
                 <button key={i} onClick={() => setDifficultyIndex(i)}
-                  className={cn("h-6 w-6 rounded-md text-xs font-bold transition", i <= difficultyIndex ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200")}>{i}</button>
+                  className={cn("h-6 w-6 rounded-md text-xs font-bold transition", i <= difficultyIndex ? "bg-brand-600 text-white" : "bg-slate-100 dark:bg-white/[0.07] text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-200 dark:bg-white/10")}>{i}</button>
               ))}
             </span>
           </div>
@@ -282,7 +282,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
           {type === "fill_in" && (
             <div className="flex flex-wrap items-center gap-2 text-[13px]">
               <Button size="sm" variant="secondary" onClick={insertGap}><Plus className="h-3.5 w-3.5" /> Gap ___</Button>
-              <span className="text-slate-500">{gaps} gap{gaps === 1 ? "" : "s"}</span>
+              <span className="text-slate-500 dark:text-[#9aa3b2]">{gaps} gap{gaps === 1 ? "" : "s"}</span>
             </div>
           )}
 
@@ -291,7 +291,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
               {options.map((o, i) => (
                 <div key={i} className="flex min-w-0 items-center gap-2">
                   <button onClick={() => toggleCorrect(o)} title="Mark correct"
-                    className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition", o && correct.includes(o) ? "border-emerald-600 bg-emerald-500 text-white" : "border-slate-300 text-transparent hover:border-emerald-500")}>✓</button>
+                    className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition", o && correct.includes(o) ? "border-emerald-600 bg-emerald-500 text-white" : "border-slate-300 dark:border-[var(--yrk-border-default)] text-transparent hover:border-emerald-500")}>✓</button>
                   <Input placeholder={`Option ${i + 1}`} value={o} onChange={(e) => {
                     const next = [...options]; next[i] = e.target.value;
                     const old = options[i];
@@ -341,7 +341,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
           {(type === "emq" || type === "matching") && (
             <div className="grid gap-2">
               {parts.map((p, i) => (
-                <div key={i} className="grid gap-1 rounded-xl bg-slate-50 p-2">
+                <div key={i} className="grid gap-1 rounded-xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] p-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <Input placeholder={`Sub-question ${i + 1}`} value={p.stem ?? ""} onChange={(e) => setPart(i, { stem: e.target.value })} />
                     {parts.length > 1 && <Button size="icon" variant="ghost" onClick={() => removePart(i)}><Trash2 className="h-4 w-4" /></Button>}
@@ -370,7 +370,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
           {(type === "kfq" || type === "meq" || type === "compound") && (
             <div className="grid gap-1.5">
               {parts.map((p, i) => (
-                <div key={i} className="grid gap-1 rounded-xl bg-slate-50 p-2">
+                <div key={i} className="grid gap-1 rounded-xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] p-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <Input placeholder={type === "meq" ? `Step ${i + 1}` : `Key question ${i + 1}`} value={p.stem ?? ""} onChange={(e) => setPart(i, { stem: e.target.value })} />
                     {parts.length > 1 && <Button size="icon" variant="ghost" onClick={() => removePart(i)}><Trash2 className="h-4 w-4" /></Button>}
@@ -395,7 +395,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
           )}
 
           {type === "fill_in" && (
-            <div className="grid gap-1.5 rounded-xl bg-slate-50 p-2.5">
+            <div className="grid gap-1.5 rounded-xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] p-2.5">
               {syncedCorrect().map((a, i) => (
                 <label key={i} className="yrk-label flex items-center gap-2">Gap {i + 1}<Input placeholder={`Answer ${i + 1}`} value={a} onChange={(e) => setGapAnswer(i, e.target.value)} /></label>
               ))}
@@ -414,7 +414,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
               ))}
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" onClick={addPart}><Plus className="h-3.5 w-3.5" /> Criterion</Button>
-                <span className="text-xs text-slate-400">Total {rubricTotal}</span>
+                <span className="text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Total {rubricTotal}</span>
               </div>
             </div>
           )}
@@ -425,12 +425,12 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
         {/* profile, collapsed unless filled */}
         <Card><CardContent className="p-0">
           <button onClick={() => setProfileOpen((v) => !v)} className="flex w-full items-center gap-2 px-4 py-3 text-left">
-            <ChevronDown className={cn("h-4 w-4 text-slate-400 transition", !profileOpen && "-rotate-90")} />
+            <ChevronDown className={cn("h-4 w-4 text-slate-400 dark:text-[var(--yrk-text-tertiary)] transition", !profileOpen && "-rotate-90")} />
             <span className="text-[13px] font-bold">Question profile</span>
-            <span className="truncate text-xs text-slate-400">{profileSummary}</span>
+            <span className="truncate text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{profileSummary}</span>
           </button>
           {profileOpen && (
-            <div className="grid gap-2.5 border-t border-slate-100 p-4 sm:grid-cols-2">
+            <div className="grid gap-2.5 border-t border-slate-100 dark:border-[var(--yrk-border-subtle)] p-4 sm:grid-cols-2">
               <label className="yrk-label">Category
                 <Select value={category} onChange={(e) => setCategory(e.target.value)}>
                   <option value="primary">Primary</option><option value="secondary">Secondary</option>
@@ -459,30 +459,30 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
         </CardContent></Card>
 
         {/* sticky action bar */}
-        <div className="sticky-safe sticky bottom-3 z-10 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-3.5 py-2.5 shadow-lift backdrop-blur">
-          <span className={cn("min-w-0 flex-1 truncate text-[13px]", errors.length ? "font-medium text-amber-700" : "text-slate-400")} title={errors.join(" ")}>
+        <div className="sticky-safe sticky bottom-3 z-10 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] bg-white/95 px-3.5 py-2.5 shadow-lift backdrop-blur">
+          <span className={cn("min-w-0 flex-1 truncate text-[13px]", errors.length ? "font-medium text-amber-700 dark:text-amber-300" : "text-slate-400 dark:text-[var(--yrk-text-tertiary)]")} title={errors.join(" ")}>
             {errors.length ? `${errors.length} to fix · ${errors[0]}` : "Ready"}
           </span>
           <Button variant="accent" size="sm" onClick={submit} disabled={!!strict && !!errors.length} title={strict && errors.length ? errors[0] : submitLabel}>{submitLabel}</Button>
         </div>
       </div>
 
-      <Card className={cn("h-fit lg:sticky lg:top-20", mobilePane === "preview" ? "yrk-fade" : "hidden lg:block")}><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><Eye className="h-4 w-4 text-indigo-600" /> Preview</CardTitle><CardDescription>How it reads in play.</CardDescription></CardHeader>
+      <Card className={cn("h-fit lg:sticky lg:top-20", mobilePane === "preview" ? "yrk-fade" : "hidden lg:block")}><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><Eye className="h-4 w-4 text-brand-600" /> Preview</CardTitle><CardDescription>How it reads in play.</CardDescription></CardHeader>
         <CardContent className="grid gap-2 text-sm">
-          <div className="font-medium leading-snug break-words">{stem || <span className="text-slate-400">Stem appears here…</span>}</div>
+          <div className="font-medium leading-snug break-words">{stem || <span className="text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Stem appears here…</span>}</div>
           {["mcq", "multi_select"].includes(type) && options.filter((o) => o.trim()).map((o) => (
-            <div key={o} className={cn("rounded-lg border px-3 py-2", correct.includes(o) ? "border-emerald-300 bg-emerald-50" : "border-slate-200")}>{o}</div>
+            <div key={o} className={cn("rounded-lg border px-3 py-2", correct.includes(o) ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950" : "border-slate-200 dark:border-[var(--yrk-border-subtle)]")}>{o}</div>
           ))}
           {type === "mtf" && parts.map((p, i) => (
-            <div key={i} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-[13px]"><span className="min-w-0 truncate">{p.stem || `Statement ${i + 1}`}</span><span className="shrink-0 font-bold text-emerald-700">{correct[i] ?? "True"}</span></div>
+            <div key={i} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-[var(--yrk-border-subtle)] px-3 py-1.5 text-[13px]"><span className="min-w-0 truncate">{p.stem || `Statement ${i + 1}`}</span><span className="shrink-0 font-bold text-emerald-700 dark:text-emerald-300">{correct[i] ?? "True"}</span></div>
           ))}
-          {type === "sct" && <div className="text-[13px] text-slate-500">Expert: {correct[0] || "—"}</div>}
+          {type === "sct" && <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">Expert: {correct[0] || "—"}</div>}
           {(type === "emq" || type === "matching" || type === "kfq" || type === "meq" || type === "compound") && (
-            <div className="text-[13px] text-slate-500">{parts.length} sub-question{parts.length === 1 ? "" : "s"}</div>
+            <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">{parts.length} sub-question{parts.length === 1 ? "" : "s"}</div>
           )}
-          {type === "fill_in" && <div className="text-slate-500">{gaps} blank{gaps === 1 ? "" : "s"}</div>}
-          {type === "saq" && <div className="text-slate-500">Accepts: {correct.filter(Boolean).join(" / ") || "—"}</div>}
-          {isRubric && <div className="text-[13px] text-slate-500">{parts.length} criteria · {rubricTotal} marks</div>}
+          {type === "fill_in" && <div className="text-slate-500 dark:text-[#9aa3b2]">{gaps} blank{gaps === 1 ? "" : "s"}</div>}
+          {type === "saq" && <div className="text-slate-500 dark:text-[#9aa3b2]">Accepts: {correct.filter(Boolean).join(" / ") || "—"}</div>}
+          {isRubric && <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">{parts.length} criteria · {rubricTotal} marks</div>}
           <div className="flex flex-wrap gap-1.5"><Badge tone="draft">{TYPE_LABEL[type]}</Badge><Badge tone={bandOf(difficultyIndex)}>{difficultyIndex}/5</Badge></div>
         </CardContent>
       </Card>

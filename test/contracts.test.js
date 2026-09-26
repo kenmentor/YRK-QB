@@ -345,4 +345,22 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     const builder = read("src/app/activities/[id]/page.tsx");
     assert.ok(builder.includes("strict onSubmit={createInline}"), "inline creates strictly");
   });
+  it("theme + login-only: tokens, dark toggle, brand, no signup", () => {
+    const css = read("src/app/globals.css");
+    assert.ok(css.includes("--yrk-surface-canvas"), "tokens present");
+    assert.ok(css.includes(".dark {"), "dark mapping present");
+    const cfg = read("tailwind.config.js");
+    assert.ok(cfg.includes("brand"), "brand scale present");
+    assert.ok(fs.existsSync(path.join(root, "src/components/theme-toggle.tsx")), "toggle present");
+    const layout = read("src/app/layout.tsx");
+    assert.ok(layout.includes("yrk-theme-boot"), "no-flash boot present");
+    const header = read("src/components/site-header.tsx");
+    assert.ok(header.includes("ThemeToggle"), "toggle mounted");
+    assert.ok(!fs.existsSync(path.join(root, "src/app/register")), "register page gone");
+    assert.ok(!fs.existsSync(path.join(root, "src/app/api/auth/register")), "register API gone");
+    const login = read("src/app/login/page.tsx");
+    assert.ok(login.includes("DEFAULT_ACCOUNTS"), "default-account picker present");
+    const grid = read("src/components/drive-grid.tsx");
+    assert.ok(!grid.includes("9500"), "no shade corruption");
+  });
 });

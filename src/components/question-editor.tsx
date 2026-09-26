@@ -124,11 +124,12 @@ function blankParts(n: number): QPart[] {
   return Array.from({ length: n }, () => ({ stem: "" }));
 }
 
-export function QuestionEditor({ initial, topics, submitLabel, onSubmit }: {
+export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict }: {
   initial?: Partial<QForm>;
   topics: { id: string; name: string; subject: string; exam: string }[];
   submitLabel: string;
   onSubmit: (f: QForm) => void;
+  strict?: boolean;
 }) {
   const [type, setType] = useState<QType>((initial?.type as QType) ?? "mcq");
   const [stem, setStem] = useState(initial?.stem ?? "");
@@ -142,6 +143,8 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit }: {
   const [tagsStr, setTagsStr] = useState((initial?.tags ?? []).join(", "));
   const [mediaUrl, setMediaUrl] = useState(initial?.mediaUrl ?? "");
   const [topicId, setTopicId] = useState(initial?.topicId ?? "");
+  // Mobile shows Compose xor Preview (slide between them); desktop shows both.
+  const [mobilePane, setMobilePane] = useState<"compose" | "preview">("compose");
   // Profile stays collapsed unless the question already carries metadata.
   const [profileOpen, setProfileOpen] = useState(
     !!(initial?.sector || (initial?.tags ?? []).length || initial?.mediaUrl || initial?.topicId || (initial?.category && initial.category !== "tertiary"))
@@ -226,6 +229,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit }: {
   }
 
   function submit() {
+    if (strict && errors.length) return; // invalid files never reach the bank
     const tags = tagsStr.split(",").map((t) => t.trim()).filter(Boolean);
     onSubmit({
       type, stem,
@@ -243,7 +247,18 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit }: {
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <div className="grid gap-3">
+      {/* mobile: slide between compose and preview instead of stacking */}
+      <div className="grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-soft lg:hidden">
+        <button onClick={() => setMobilePane("compose")}
+          className={cn("rounded-xl px-3 py-2 text-[13px] font-bold transition", mobilePane === "compose" ? "bg-slate-900 text-white" : "text-slate-500")}>
+          Compose
+        </button>
+        <button onClick={() => setMobilePane("preview")}
+          className={cn("flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-bold transition", mobilePane === "preview" ? "bg-slate-900 text-white" : "text-slate-500")}>
+          <Eye className="h-4 w-4" /> Preview
+        </button>
+      </div>
+      <div className={cn("grid gap-3", mobilePane === "preview" && "hidden lg:grid")}>
         <Card><CardContent className="grid gap-2.5 p-4">
           {/* format in one compact row */}
           <div className="flex flex-wrap items-center gap-1.5">
@@ -448,11 +463,11 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit }: {
           <span className={cn("min-w-0 flex-1 truncate text-[13px]", errors.length ? "font-medium text-amber-700" : "text-slate-400")} title={errors.join(" ")}>
             {errors.length ? `${errors.length} to fix · ${errors[0]}` : "Ready"}
           </span>
-          <Button variant="accent" size="sm" onClick={submit}>{submitLabel}</Button>
+          <Button variant="accent" size="sm" onClick={submit} disabled={!!strict && !!errors.length} title={strict && errors.length ? errors[0] : submitLabel}>{submitLabel}</Button>
         </div>
       </div>
 
-      <Card className="h-fit lg:sticky lg:top-20"><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><Eye className="h-4 w-4 text-indigo-600" /> Preview</CardTitle><CardDescription>How it reads in play.</CardDescription></CardHeader>
+      <Card className={cn("h-fit lg:sticky lg:top-20", mobilePane === "preview" ? "yrk-fade" : "hidden lg:block")}><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><Eye className="h-4 w-4 text-indigo-600" /> Preview</CardTitle><CardDescription>How it reads in play.</CardDescription></CardHeader>
         <CardContent className="grid gap-2 text-sm">
           <div className="font-medium leading-snug break-words">{stem || <span className="text-slate-400">Stem appears here…</span>}</div>
           {["mcq", "multi_select"].includes(type) && options.filter((o) => o.trim()).map((o) => (

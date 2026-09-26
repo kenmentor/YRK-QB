@@ -143,8 +143,7 @@ export function SiteHeader() {
             </>
           ) : (
             <>
-              <a href="/login" className="hidden sm:block"><Button variant="ghost" size="sm">Login</Button></a>
-              <a href="/register"><Button size="sm">Sign up</Button></a>
+              <a href="/login"><Button size="sm">Login</Button></a>
               <button onClick={() => setMenuOpen((v) => !v)} aria-label="Menu"
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 transition hover:bg-slate-100 md:hidden">
                 {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}

@@ -350,7 +350,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
               <span className="text-sm font-semibold">New question — files to your bank root and links here</span>
               <button onClick={() => setShowNewQ(false)} className="rounded-lg bg-white/10 p-1.5 hover:bg-white/20"><X className="h-4 w-4" /></button>
             </div>
-            <QuestionEditor topics={topics} submitLabel="Create & link" onSubmit={createInline} />
+            <QuestionEditor topics={topics} submitLabel="Create & link" strict onSubmit={createInline} />
           </div>
         </div>
       )}

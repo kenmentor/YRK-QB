@@ -48,7 +48,7 @@ export default function LoginPage() {
             <label className="yrk-label">Password<Input placeholder="••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} /></label>
             {error && <div className="rounded-xl bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700">{error}</div>}
             <Button onClick={submit} disabled={busy}>{busy ? "Logging in…" : "Login"}</Button>
-            <div className="text-center text-xs text-slate-500">No account? <a className="font-semibold text-indigo-600 hover:underline" href="/register">Sign up</a> · Demo: ama@example.com / password123</div>
+            <div className="text-center text-xs text-slate-500">Demo reviewer login is prefilled — just hit Login.</div>
           </CardContent>
         </Card>
       </div>

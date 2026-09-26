@@ -86,6 +86,7 @@ html, body { overflow-x: clip; }
 .yrk-modal { animation: yrk-rise 0.22s ease-out; }
 .yrk-overlay { animation: yrk-fade 0.18s ease-out; }
 .yrk-toast-in { animation: yrk-rise 0.25s ease-out; }
+.yrk-fade { animation: yrk-fade 0.2s ease-out; }
 
 /* field labels */
 .yrk-label { @apply text-[13px] font-medium text-slate-600; }

@@ -298,7 +298,8 @@ export default function QuizPage() {
     const sourceId = activityId || setId;
     return (
       <div className="grid gap-5">
-        <PageHero eyebrow="Play" title="Start sharp" description="Frozen at start. Practice guides instantly, self test runs a soft clock, test runs the strict server clock." tone="dark" />
+        <PageHero eyebrow="Play" title="Start sharp" description="Frozen at start. Practice guides instantly, self test runs a soft clock, test runs the strict server clock." tone="dark"
+          actions={<NewActivityButton variant="accent" label="New activity" />} />
         {!!activities.length && !sourceId && <ActivityPicker activities={activities} mode={mode} />}
         {actsLoading && !activities.length && (
           <div className="mx-auto grid w-full max-w-2xl gap-2">
@@ -638,11 +639,8 @@ function ActivityPicker({ activities, mode }: {
   };
   const groups = LADDER.map((c) => ({ cat: c, items: activities.filter((a) => (a.category ?? "tertiary") === c) })).filter((g) => g.items.length);
   return (
-    <div className="mx-auto grid w-full max-w-2xl gap-4">
-      <div className="flex items-center justify-between">
+      <div className="mx-auto grid w-full max-w-2xl gap-4">
         <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400">Curriculum · {activities.length} activit{activities.length === 1 ? "y" : "ies"}</h2>
-        <NewActivityButton variant="outline" size="sm" />
-      </div>
       {groups.map((g) => (
         <div key={g.cat} className="grid gap-2">
           <h3 className="flex items-center gap-2 text-[13px] font-bold text-slate-600">

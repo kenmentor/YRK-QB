@@ -524,7 +524,7 @@ export default function BankPage() {
               <span className="text-sm font-semibold">New question in “{crumbs[crumbs.length - 1]?.name}”</span>
               <button onClick={() => setShowNewQ(false)} className="rounded-lg bg-white/10 p-1.5 hover:bg-white/20"><X className="h-4 w-4" /></button>
             </div>
-            <QuestionEditor topics={topics} submitLabel="File question" onSubmit={createQuestion} />
+            <QuestionEditor topics={topics} submitLabel="File question" strict onSubmit={createQuestion} />
           </div>
         </div>
       )}

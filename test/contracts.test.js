@@ -330,4 +330,19 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     const bank = read("src/app/bank/page.tsx");
     assert.ok(bank.includes("authLoaded"), "bank gates on loaded session");
   });
+  it("reviewer pass: login-only, entry polish, strict create", () => {
+    const header = read("src/components/site-header.tsx");
+    assert.ok(!header.includes("/register"), "signup hidden");
+    const play = read("src/app/play/page.tsx");
+    assert.ok(play.includes("actions={<NewActivityButton"), "hero entry placement");
+    const dlg = read("src/components/new-activity-button.tsx");
+    assert.ok(dlg.includes("yrk-sheet"), "dialog sheets on mobile");
+    const ed = read("src/components/question-editor.tsx");
+    assert.ok(ed.includes("mobilePane"), "compose/preview toggle present");
+    assert.ok(ed.includes("strict"), "strict create mode present");
+    const bank = read("src/app/bank/page.tsx");
+    assert.ok(bank.includes("strict onSubmit={createQuestion}"), "bank creates strictly");
+    const builder = read("src/app/activities/[id]/page.tsx");
+    assert.ok(builder.includes("strict onSubmit={createInline}"), "inline creates strictly");
+  });
 });

@@ -280,8 +280,11 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
               selected === f.id ? "bg-indigo-50 hover:bg-indigo-50" : "hover:bg-slate-50")}
           >
             <span className="flex min-w-0 items-center gap-2.5">
-              <Folder className="h-[18px] w-[18px] shrink-0 text-amber-500" fill="#fcd34d" strokeWidth={1.75} />
-              <span className="truncate text-slate-800">{f.name}</span>
+              <Folder className="h-5 w-5 shrink-0 text-amber-500 sm:h-[18px] sm:w-[18px]" fill="#fcd34d" strokeWidth={1.75} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] text-slate-800 sm:text-sm">{f.name}</span>
+                <span className="block truncate text-xs text-slate-400 sm:hidden">Folder{f.shared ? ` · ${f.ownerName ?? "shared"}` : ""} · {fmtDate(f.createdAt)}</span>
+              </span>
               {f.shared && <SharedMark ownerName={f.ownerName} />}
             </span>
             <span className="hidden truncate text-[13px] text-slate-500 sm:block">File folder{f.shared ? ` · ${f.ownerName ?? ""}` : ""}</span>
@@ -301,8 +304,11 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
               className={cn("group relative grid min-h-[44px] cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]", selected === q.id ? "bg-indigo-50 hover:bg-indigo-50" : "hover:bg-slate-50")}
             >
               <span className="flex min-w-0 items-center gap-2.5">
-                <Icon className="h-[18px] w-[18px] shrink-0 text-indigo-500" strokeWidth={1.75} />
-                <span className="truncate text-slate-800">{q.stem}</span>
+                <Icon className="h-5 w-5 shrink-0 text-indigo-500 sm:h-[18px] sm:w-[18px]" strokeWidth={1.75} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] text-slate-800 sm:text-sm">{q.stem}</span>
+                  <span className="block truncate text-xs capitalize text-slate-400 sm:hidden">{typeLabel(q.type)} · {q.difficulty}</span>
+                </span>
                 {q.shared && <SharedMark ownerName={sharedBy} />}
               </span>
               <span className="hidden truncate text-[13px] capitalize text-slate-500 sm:block">{typeLabel(q.type)} question</span>

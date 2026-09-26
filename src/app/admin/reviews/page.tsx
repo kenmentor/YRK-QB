@@ -39,13 +39,18 @@ export default function AdminReviews() {
     <div className="grid gap-5">
       <PageHero eyebrow="Admin" title="Review contributions" description="Commit, cancel with a message, or cancel quietly." tone="dark" />
       {items.length ? items.map((p) => {
-        const q = JSON.parse(p.payload) as { stem: string; type: string; difficulty: string; explanation: string };
+        const q = (() => {
+          try {
+            const v = JSON.parse(p.payload) as { stem?: string; type?: string; difficulty?: string; explanation?: string };
+            return { stem: v.stem ?? "(unreadable payload)", type: v.type ?? "mcq", difficulty: v.difficulty ?? "medium", explanation: v.explanation ?? "" };
+          } catch { return { stem: "(unreadable payload)", type: "mcq", difficulty: "medium", explanation: "" }; }
+        })();
         return (
           <Card key={p.id}>
             <CardHeader>
               <div className="flex flex-wrap items-center gap-2"><Badge tone="in_review">{p.status}</Badge><Badge>{p.subject?.name}</Badge><span className="text-xs text-slate-400">by {p.contributor?.name} · {p.kind}</span></div>
-              <CardTitle className="text-[16px]">{q.stem}</CardTitle>
-              <CardDescription>{q.type.replace("_", " ")} · {q.difficulty} · {q.explanation.slice(0, 120)}</CardDescription>
+              <CardTitle className="break-words text-[16px]">{q.stem}</CardTitle>
+              <CardDescription className="break-words">{(q.type ?? "").replace("_", " ")} · {q.difficulty} · {(q.explanation ?? "").slice(0, 120)}</CardDescription>
               {p.message && <div className="text-[13px] text-slate-500">Contributor note: “{p.message}”</div>}
             </CardHeader>
             <CardContent className="grid gap-2">

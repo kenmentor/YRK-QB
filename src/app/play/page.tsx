@@ -513,9 +513,9 @@ export default function QuizPage() {
                   <div key={i} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm">
                     <span className="min-w-0 break-words">{p.label} <span className="text-slate-400">· max {p.max}</span></span>
                     <span className="flex shrink-0 items-center gap-1.5">
-                      <button className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-base hover:bg-slate-50" onClick={() => setCriterion(i, (rScores[i] ?? 0) - 1, Number(p.max) || 0)}>−</button>
+                      <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-base hover:bg-slate-50 sm:h-7 sm:w-7" onClick={() => setCriterion(i, (rScores[i] ?? 0) - 1, Number(p.max) || 0)}>−</button>
                       <span className="w-8 text-center font-bold tabular-nums">{rScores[i] ?? 0}</span>
-                      <button className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-base hover:bg-slate-50" onClick={() => setCriterion(i, (rScores[i] ?? 0) + 1, Number(p.max) || 0)}>+</button>
+                      <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-base hover:bg-slate-50 sm:h-7 sm:w-7" onClick={() => setCriterion(i, (rScores[i] ?? 0) + 1, Number(p.max) || 0)}>+</button>
                     </span>
                   </div>
                 ))}

@@ -289,6 +289,16 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     assert.ok(btn.includes("h-10") && btn.includes("sm:h-8"), "mobile-first button sizing present");
     const grid = read("src/components/drive-grid.tsx");
     assert.ok(grid.includes("min-h-[44px]"), "44px rows present");
+    assert.ok(grid.includes("sm:hidden"), "mobile meta lines present");
+  });
+
+  it("bank mobile structure: folders drawer, search-first ribbon", () => {
+    const bank = read("src/app/bank/page.tsx");
+    assert.ok(bank.includes("showTree"), "folders drawer present");
+    assert.ok(bank.includes("BankNav"), "shared nav pane present");
+    assert.ok(bank.includes("PanelLeft"), "drawer trigger present");
+    const ex = read("src/components/content-explorer.tsx");
+    assert.ok(ex.includes("sm:h-6 sm:w-6"), "explorer touch checkboxes present");
   });
 
   it("foreign-doc hardening: shape filter + null-safe reads", () => {

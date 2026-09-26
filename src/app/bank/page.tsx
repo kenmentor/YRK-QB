@@ -12,7 +12,7 @@ import { downloadFolderZip, downloadQuestionFile } from "@/lib/transport";
 import { apiGet, apiSend } from "@/lib/api";
 import { QuestionView } from "@/components/question-view";
 import { QuestionEditor, QForm } from "@/components/question-editor";
-import { Search, FolderPlus, FilePlus, ChevronRight, BookOpen, ArrowRight, ArrowLeft, ArrowUp, RefreshCw, Database, LayoutGrid, List, Share2, X, UserPlus, LogOut, Users, Upload } from "lucide-react";
+import { Search, FolderPlus, FilePlus, ChevronRight, BookOpen, ArrowRight, ArrowLeft, ArrowUp, RefreshCw, Database, LayoutGrid, List, Share2, X, UserPlus, LogOut, Users, Upload, PanelLeft } from "lucide-react";
 
 interface TreeFolder { id: string; name: string; parentId?: string | null; ownerId?: string | null; shared?: boolean; ownerName?: string; access?: string; }
 interface Crumb { id: string | null; name: string; ownerId: string; }
@@ -56,6 +56,7 @@ export default function BankPage() {
   const [dropCrumb, setDropCrumb] = useState<string | null>(null);
   const [importScope, setImportScope] = useState<{ parentId: string | null; name: string } | null>(null);
   const [showShare, setShowShare] = useState(false);
+  const [showTree, setShowTree] = useState(false);
   const [shareScope, setShareScope] = useState<string | null>(null); // folder being shared (null = root)
   const [shareEmail, setShareEmail] = useState("");
   const [shareRole, setShareRole] = useState("viewer");
@@ -375,32 +376,11 @@ export default function BankPage() {
       ) : (
         <div className="grid items-start gap-4 lg:grid-cols-[260px_1fr]">
           {/* navigation pane */}
-          <Card className="hidden lg:block"><CardContent className="grid gap-3 p-3">
-            <div>
-              <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Quick access</div>
-              <DriveTree folders={myTree} currentId={sharedMode ? null : folderId} onSelect={treeSelect} onDropMove={moveItem} />
-            </div>
-            {!!incoming.length && (
-              <div>
-                <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Shared with me</div>
-                <div className="grid gap-0.5">
-                  {incoming.map((s) => (
-                    <div key={s.id} className="group flex items-center gap-1">
-                      <button
-                        onClick={() => nav(s.folderId, s.ownerId)}
-                        className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition ${folderId === s.folderId && ownerId === s.ownerId ? "bg-indigo-50 font-semibold text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`}
-                      >
-                        <Users className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        <span className="min-w-0 flex-1 truncate">{s.folderName ?? `${s.ownerName}'s bank`}</span>
-                        <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400">{s.role}</span>
-                      </button>
-                      <button title="Leave" onClick={() => leave(s.id)} className="rounded-md p-1 text-slate-300 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"><LogOut className="h-3.5 w-3.5" /></button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {canCreate && !sharedMode && <Button size="sm" variant="outline" className="w-full" onClick={() => setShowNewFolder(true)}><FolderPlus className="h-3.5 w-3.5" /> New folder</Button>}
+          <Card className="hidden lg:block"><CardContent className="p-3">
+            <BankNav myTree={myTree} incoming={incoming} folderId={folderId} ownerId={ownerId}
+              sharedMode={sharedMode} meId={me?.id} canCreate={canCreate}
+              onTreeSelect={treeSelect} onMoveItem={moveItem} onNav={nav} onLeave={leave}
+              onNewFolder={() => setShowNewFolder(true)} />
           </CardContent></Card>
 
           <div className="grid gap-0">
@@ -441,23 +421,26 @@ export default function BankPage() {
               </div>
             </CardContent></Card>
             {/* ribbon: actions */}
-            <div className="flex flex-wrap items-center gap-1.5 rounded-b-xl border border-t-0 border-slate-200 bg-white px-2.5 py-2 shadow-soft">
-              {canCreate && !(sharedMode && !folderId) && <Button size="sm" variant="accent" onClick={() => setShowNewQ(true)}><FilePlus className="h-3.5 w-3.5" /> New</Button>}
-              {canCreate && <Button size="sm" variant="outline" onClick={() => setShowNewFolder(true)}><FolderPlus className="h-3.5 w-3.5" /> New folder</Button>}
-              {canCreate && !(sharedMode && !folderId) && (
-                <Button size="sm" variant="outline" onClick={() => setImportScope({ parentId: folderId, name: crumbs[crumbs.length - 1]?.name ?? "My Bank" })}>
-                  <Upload className="h-3.5 w-3.5" /> Import
-                </Button>
-              )}
-              {access === "owner" && <Button size="sm" variant="outline" onClick={() => openShare()}><Share2 className="h-3.5 w-3.5" /> Share{folderId ? " folder" : " bank"}</Button>}
-              {/* view switcher */}
-              <div className="ml-1 flex rounded-lg border border-slate-200 p-0.5">
-                <button title="Details view" onClick={() => setViewAndSave("details")} className={`rounded-md p-1.5 transition ${view === "details" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><List className="h-4 w-4" /></button>
-                <button title="Tiles view" onClick={() => setViewAndSave("tiles")} className={`rounded-md p-1.5 transition ${view === "tiles" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><LayoutGrid className="h-4 w-4" /></button>
-              </div>
-              <div className="relative ml-auto sm:hidden">
+            <div className="grid gap-2 rounded-b-xl border border-t-0 border-slate-200 bg-white px-2.5 py-2.5 shadow-soft">
+              <div className="relative sm:hidden">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input className="w-36 pl-9" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
+                <Input className="w-full pl-9" placeholder={`Search ${crumbs[crumbs.length - 1]?.name ?? ""}`} value={q} onChange={(e) => setQ(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                <Button size="sm" variant="outline" className="shrink-0 lg:hidden" onClick={() => setShowTree(true)}><PanelLeft className="h-3.5 w-3.5" /> Folders</Button>
+                {canCreate && !(sharedMode && !folderId) && <Button size="sm" variant="accent" className="shrink-0" onClick={() => setShowNewQ(true)}><FilePlus className="h-3.5 w-3.5" /> New</Button>}
+                {canCreate && <Button size="sm" variant="outline" className="shrink-0" onClick={() => setShowNewFolder(true)}><FolderPlus className="h-3.5 w-3.5" /> New folder</Button>}
+                {canCreate && !(sharedMode && !folderId) && (
+                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setImportScope({ parentId: folderId, name: crumbs[crumbs.length - 1]?.name ?? "My Bank" })}>
+                    <Upload className="h-3.5 w-3.5" /> Import
+                  </Button>
+                )}
+                {access === "owner" && <Button size="sm" variant="outline" className="shrink-0" onClick={() => openShare()}><Share2 className="h-3.5 w-3.5" /> Share</Button>}
+                {/* view switcher */}
+                <div className="ml-auto flex shrink-0 rounded-lg border border-slate-200 p-0.5">
+                  <button title="Details view" onClick={() => setViewAndSave("details")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "details" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><List className="h-4 w-4" /></button>
+                  <button title="Tiles view" onClick={() => setViewAndSave("tiles")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "tiles" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><LayoutGrid className="h-4 w-4" /></button>
+                </div>
               </div>
             </div>
 
@@ -542,6 +525,24 @@ export default function BankPage() {
         </Modal>
       )}
 
+      {/* folders drawer (mobile) */}
+      {showTree && (
+        <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4 lg:hidden" onClick={() => setShowTree(false)}>
+          <div className="grid max-h-[85dvh] w-full gap-1 overflow-y-auto rounded-3xl bg-white p-4 shadow-lift" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-1 pb-1">
+              <div className="text-sm font-bold">Folders</div>
+              <button onClick={() => setShowTree(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+            </div>
+            <div onClick={() => setShowTree(false)}>
+              <BankNav myTree={myTree} incoming={incoming} folderId={folderId} ownerId={ownerId}
+                sharedMode={sharedMode} meId={me?.id} canCreate={canCreate}
+                onTreeSelect={(id, oid) => { treeSelect(id, oid); }} onMoveItem={(k, id, dest) => { setShowTree(false); moveItem(k, id, dest); }} onNav={nav} onLeave={leave}
+                onNewFolder={() => { setShowTree(false); setShowNewFolder(true); }} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* import modal */}
       {importScope && (
         <ImportModal scopeName={importScope.name} parentId={importScope.parentId}
@@ -616,8 +617,49 @@ export default function BankPage() {
   );
 }
 
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+// Navigation pane content, shared by the desktop sidebar and the mobile folders sheet.
+function BankNav({ myTree, incoming, folderId, ownerId, sharedMode, meId, canCreate, onTreeSelect, onMoveItem, onNav, onLeave, onNewFolder }: {
+  myTree: TreeFolder[]; incoming: IncomingShare[]; folderId: string | null; ownerId: string | null;
+  sharedMode: boolean; meId?: string; canCreate: boolean;
+  onTreeSelect: (id: string | null, oid?: string | null) => void;
+  onMoveItem: (kind: "file" | "folder", id: string, dest: string | null) => void;
+  onNav: (fid: string | null, oid?: string | null) => void;
+  onLeave: (id: string) => void;
+  onNewFolder: () => void;
+}) {
+  void meId;
   return (
+    <div className="grid gap-3">
+      <div>
+        <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Quick access</div>
+        <DriveTree folders={myTree} currentId={sharedMode ? null : folderId} onSelect={onTreeSelect} onDropMove={onMoveItem} />
+      </div>
+      {!!incoming.length && (
+        <div>
+          <div className="px-2 pb-2 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Shared with me</div>
+          <div className="grid gap-0.5">
+            {incoming.map((s) => (
+              <div key={s.id} className="group flex items-center gap-1">
+                <button
+                  onClick={() => onNav(s.folderId, s.ownerId)}
+                  className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition sm:py-1.5 sm:text-[13px] ${folderId === s.folderId && ownerId === s.ownerId ? "bg-indigo-50 font-semibold text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`}
+                >
+                  <Users className="h-4 w-4 shrink-0 text-slate-400 sm:h-3.5 sm:w-3.5" />
+                  <span className="min-w-0 flex-1 truncate">{s.folderName ?? `${s.ownerName}'s bank`}</span>
+                  <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400">{s.role}</span>
+                </button>
+                <button title="Leave" onClick={() => onLeave(s.id)} className="rounded-md p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 sm:opacity-0 sm:p-1 sm:group-hover:opacity-100"><LogOut className="h-4 w-4 sm:h-3.5 sm:w-3.5" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {canCreate && !sharedMode && <Button size="sm" variant="outline" className="w-full" onClick={onNewFolder}><FolderPlus className="h-3.5 w-3.5" /> New folder</Button>}
+    </div>
+  );
+}
+
+function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {  return (
     <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
       <div className="grid w-full max-w-sm gap-3 rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-2">

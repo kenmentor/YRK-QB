@@ -108,7 +108,7 @@ export function ContentExplorer({ open, exclude, onAdd, onClose }: {
     const on = selKeys.has(key);
     return (
       <button onClick={() => toggle({ kind, id, name, sub, ...extra })}
-        className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition", on ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white text-transparent hover:border-slate-500")}>✓</button>
+        className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-xs font-bold transition sm:h-6 sm:w-6", on ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white text-transparent hover:border-slate-500")}>✓</button>
     );
   }
 

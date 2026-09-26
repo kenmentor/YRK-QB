@@ -132,9 +132,9 @@ export default function ExamSetBuilder({ params }: { params: { id: string } }) {
                     <Icon className="h-4 w-4 shrink-0 text-indigo-500" />
                     <span className="min-w-0 flex-1 truncate">{x.stem}</span>
                     <Badge>{typeLabel(x.type)}</Badge>
-                    <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-30" disabled={i === 0} title="Move up" onClick={() => move(i, -1)}><ArrowUp className="h-3.5 w-3.5" /></button>
-                    <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-30" disabled={i === questions.length - 1} title="Move down" onClick={() => move(i, 1)}><ArrowDown className="h-3.5 w-3.5" /></button>
-                    <button className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" title="Remove" onClick={() => remove(i)}><X className="h-3.5 w-3.5" /></button>
+                    <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 disabled:opacity-30 sm:p-1.5" disabled={i === 0} title="Move up" onClick={() => move(i, -1)}><ArrowUp className="h-3.5 w-3.5" /></button>
+                    <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 disabled:opacity-30 sm:p-1.5" disabled={i === questions.length - 1} title="Move down" onClick={() => move(i, 1)}><ArrowDown className="h-3.5 w-3.5" /></button>
+                    <button className="rounded-md p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 sm:p-1.5" title="Remove" onClick={() => remove(i)}><X className="h-3.5 w-3.5" /></button>
                   </div>
                 );
               }) : <EmptyState title="Empty set" hint="Search the bank above and add questions." />}

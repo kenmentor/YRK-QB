@@ -351,7 +351,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
 }
 
 function StepBtn({ disabled, title, onClick, children }: { disabled?: boolean; title: string; onClick: () => void; children: React.ReactNode }) {
-  return <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-30" disabled={disabled} title={title} onClick={onClick}>{children}</button>;
+  return <button className="rounded-md p-2 text-slate-400 hover:bg-slate-100 disabled:opacity-30 sm:p-1.5" disabled={disabled} title={title} onClick={onClick}>{children}</button>;
 }
 
 const STEP_ORDER = ["content", "present", "rules", "people"];

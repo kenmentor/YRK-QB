@@ -34,7 +34,7 @@ export default function ProfilePage() {
         <CardContent className="grid gap-1.5 text-sm">{d.rank.leaderboard.map((l, i) => <div key={l.id} className="flex items-center justify-between rounded-xl border border-slate-100 px-3.5 py-2"><span className="font-medium">#{i + 1} {l.name}</span><span className="text-slate-400">{l.score} pts</span></div>)}</CardContent>
       </Card>
       <Card><CardHeader><CardTitle>My recent drafts</CardTitle><CardDescription>Latest work in spaces.</CardDescription></CardHeader>
-        <CardContent className="grid gap-2 text-sm">{d.contributions.drafts.map((x) => <div key={x.id} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3.5 py-2"><span className="min-w-0 flex-1 break-words">{x.stem.slice(0, 70)}</span> <Badge status={x.status} className="ml-auto shrink-0">{x.status}</Badge></div>)}{!d.contributions.drafts.length && <EmptyState title="No drafts yet" hint="Join a workspace." action={<a href="/workspaces"><Button size="sm">Find a workspace</Button></a>} />}</CardContent>
+        <CardContent className="grid gap-2 text-sm">{(d.contributions.drafts ?? []).map((x) => <div key={x.id} className="flex items-center gap-2 rounded-xl border border-slate-100 px-3.5 py-2.5"><span className="min-w-0 flex-1 break-words">{(x.stem ?? "").slice(0, 70)}</span> <Badge status={x.status} className="ml-auto shrink-0">{x.status}</Badge></div>)}{!(d.contributions.drafts ?? []).length && <EmptyState title="No drafts yet" hint="Join a workspace." action={<a href="/workspaces"><Button size="sm">Find a workspace</Button></a>} />}</CardContent>
       </Card>
       </div>
       <Card><CardHeader><CardTitle>Weak areas</CardTitle><CardDescription>Drill these next.</CardDescription></CardHeader>

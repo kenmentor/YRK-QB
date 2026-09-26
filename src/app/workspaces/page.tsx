@@ -76,7 +76,7 @@ export default function WorkspacesPage() {
         description="Small crews draft, professors review, owners publish."
         actions={<><Button variant="accent" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> New workspace</Button><a href="/contributions"><Button variant="secondary">My commits</Button></a></>} tone="dark" />
       {open && (
-        <div className="yrk-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onClick={() => setOpen(false)}>
+        <div className="yrk-sheet yrk-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onClick={() => setOpen(false)}>
           <Card className="yrk-modal max-h-[90dvh] w-full max-w-lg overflow-y-auto shadow-lift">
             <div onClick={(e) => e.stopPropagation()}>
               <CardHeader><div className="flex items-start justify-between"><div><CardTitle>New workspace</CardTitle></div><Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="h-4 w-4" /></Button></div></CardHeader>

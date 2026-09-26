@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("password123");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const next = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("next") : null;
+  const [next, setNext] = useState<string | null>(null);
+  useEffect(() => {
+    setNext(new URLSearchParams(window.location.search).get("next"));
+  }, []);
   async function submit() {
     setError(""); setBusy(true);
     const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });

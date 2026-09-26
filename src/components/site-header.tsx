@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { Bell, Menu, X, LogOut, UserRound, ShieldCheck, ChevronRight, FileCheck2 } from "lucide-react";
 
@@ -57,7 +58,13 @@ export function SiteHeader() {
   useEffect(() => {
     const close = (e: KeyboardEvent) => { if (e.key === "Escape") { setMenuOpen(false); setUserOpen(false); } };
     window.addEventListener("keydown", close);
-    return () => window.removeEventListener("keydown", close);
+    // Last-resort net: a dropped server must toast, never crash the page.
+    const rej = (e: PromiseRejectionEvent) => {
+      e.preventDefault();
+      toast("Something didn't load — check your connection and retry.");
+    };
+    window.addEventListener("unhandledrejection", rej);
+    return () => { window.removeEventListener("keydown", close); window.removeEventListener("unhandledrejection", rej); };
   }, []);
 
   async function logout() {

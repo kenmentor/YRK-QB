@@ -26,15 +26,15 @@ function catLabel(c?: string) {
 }
 
 export default function ActivityPage({ params }: { params: { id: string } }) {
-  const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  const initMode = ["practice", "selftest", "exam"].includes(search.get("mode") ?? "") ? search.get("mode")! : "practice";
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [mode, setMode] = useState<string>(initMode);
+  const [mode, setMode] = useState<string>("practice");
   const [accepted, setAccepted] = useState(false);
   const [me, setMe] = useState<{ id: string } | null>(null);
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get("mode");
+    if (m === "practice" || m === "selftest" || m === "exam") setMode(m);
     fetch(`/api/activities/${params.id}`).then(async (r) => {
       if (!r.ok) { setGone(true); return; }
       const d = await r.json();

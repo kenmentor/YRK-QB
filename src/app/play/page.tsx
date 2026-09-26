@@ -67,18 +67,16 @@ function isCorrect(q: Q, given: string[]): boolean {
 }
 
 export default function QuizPage() {
-  const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
   const [phase, setPhase] = useState<Phase>("setup");
-  const initMode = (["practice", "selftest", "exam"] as Mode[]).includes((search.get("mode") ?? "") as Mode) ? (search.get("mode") as Mode) : "practice";
-  const [mode, setMode] = useState<Mode>(initMode);
-  const [setId, setSetId] = useState(search.get("set") ?? "");
+  const [mode, setMode] = useState<Mode>("practice");
+  const [setId, setSetId] = useState("");
   const [setTitle, setSetTitle] = useState("");
-  const [activityId, setActivityId] = useState(search.get("activity") ?? "");
+  const [activityId, setActivityId] = useState("");
   const [activityTitle, setActivityTitle] = useState("");
   const [activities, setActivities] = useState<{ id: string; title: string; banner: string; ownerName: string; questionCount: number; modes: string[]; visibility?: string; category?: string; sector?: string }[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [topicId, setTopicId] = useState(search.get("topicId") ?? "");
-  const [subjectId, setSubjectId] = useState(search.get("subjectId") ?? "");
+  const [topicId, setTopicId] = useState("");
+  const [subjectId, setSubjectId] = useState("");
   const [subjectName, setSubjectName] = useState("");
   const [count, setCount] = useState(10);
   const [minutes, setMinutes] = useState(10);
@@ -96,6 +94,21 @@ export default function QuizPage() {
   const [startedAt, setStartedAt] = useState(0);
   const [ticket, setTicket] = useState("");
 
+  // URL deep-links (?mode=&set=&activity=&topicId=&subjectId=) apply after
+  // mount so server and client render identically (no hydration mismatch).
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search);
+    const m = search.get("mode");
+    if (m === "practice" || m === "selftest" || m === "exam") setMode(m);
+    const s = search.get("set");
+    if (s) setSetId(s);
+    const a = search.get("activity");
+    if (a) setActivityId(a);
+    const t = search.get("topicId");
+    if (t) setTopicId(t);
+    const sj = search.get("subjectId");
+    if (sj) setSubjectId(sj);
+  }, []);
   useEffect(() => { fetch("/api/topics").then((r) => r.json()).then(setTopics).catch(() => {}); }, []);
   useEffect(() => {
     if (subjectId) fetch(`/api/subjects/${subjectId}`).then((r) => (r.ok ? r.json() : null)).then((d) => d && setSubjectName(d.subject.name)).catch(() => {});
@@ -134,11 +147,29 @@ export default function QuizPage() {
 
   async function start() {
     setError("");
+    let res: Response;
+    try {
+      if (mode === "exam") {
+        // Server picks + freezes the snapshot and signs the clock. Answers
+        // stay server-side until grading. Exam sets keep their order.
+        res = await fetch("/api/quiz/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topicId: topicId || undefined, subjectId: subjectId || undefined, setId: setId || undefined, activityId: activityId || undefined, count, minutes }) });
+      } else if (activityId) {
+        res = await fetch(`/api/activities/${activityId}`);
+      } else if (setId) {
+        res = await fetch(`/api/exam-sets/${setId}`);
+      } else {
+        const params = new URLSearchParams();
+        if (topicId) params.set("topicId", topicId);
+        else if (subjectId) params.set("subjectId", subjectId);
+        params.set("take", "500");
+        res = await fetch(`/api/bank?${params.toString()}`);
+      }
+    } catch {
+      setError("Couldn't reach the server — is it running?");
+      return;
+    }
     if (mode === "exam") {
-      // Server picks + freezes the snapshot and signs the clock. Answers
-      // stay server-side until grading. Exam sets keep their order.
-      const res = await fetch("/api/quiz/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topicId: topicId || undefined, subjectId: subjectId || undefined, setId: setId || undefined, activityId: activityId || undefined, count, minutes }) });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error ?? "Could not start test"); return; }
       if (data.skipped) toast(`${data.skipped} set question${data.skipped === 1 ? " is" : "s are"} no longer live, skipped.`);
       setItems(data.items);
@@ -150,26 +181,16 @@ export default function QuizPage() {
       return;
     }
     let all: Q[];
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { setError(data.error ?? "Could not load questions"); return; }
     if (activityId) {
-      const res = await fetch(`/api/activities/${activityId}`);
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Could not load activity"); return; }
       all = ((data.items ?? []) as Q[]);
       if (!all.length) { setError("Activity has no live questions"); return; }
     } else if (setId) {
-      const res = await fetch(`/api/exam-sets/${setId}`);
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Could not load exam set"); return; }
       all = ((data.questions ?? []) as Q[]).filter((q) => q.type !== "missing");
       if (!all.length) { setError("Exam set has no live questions"); return; }
     } else {
-      const params = new URLSearchParams();
-      if (topicId) params.set("topicId", topicId);
-      else if (subjectId) params.set("subjectId", subjectId);
-      params.set("take", "500");
-      const res = await fetch(`/api/bank?${params.toString()}`);
-      if (!res.ok) { setError("Could not load bank"); return; }
-      all = shuffle(await res.json() as Q[]).slice(0, Math.max(1, Math.min(count, 500)));
+      all = shuffle((Array.isArray(data) ? data : []) as Q[]).slice(0, Math.max(1, Math.min(count, 500)));
       if (!all.length) { setError("No questions for this filter, try All topics"); return; }
     }
     setItems(all); // snapshot frozen (set order kept for exam sets)
@@ -242,7 +263,13 @@ export default function QuizPage() {
     const body = mode === "exam"
       ? { mode, ticket, answers: payload, manual }
       : { mode, topicId, subjectId, questionIds: items.map((q) => q.id), answers: payload, manual, ...(mode === "selftest" ? { startedAt, durationSecs: minutes * 60 } : {}) };
-    const res = await fetch("/api/quiz/attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    let res: Response;
+    try {
+      res = await fetch("/api/quiz/attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    } catch {
+      setError("Couldn't reach the server — your answers are kept, retry submit.");
+      return;
+    }
     if (res.status === 401) { window.location.href = "/login"; return; }
     if (res.status === 400) { const d = await res.json(); setError(d.error ?? "Submit rejected, restart the round."); setPhase("setup"); return; }
     const data = await res.json();

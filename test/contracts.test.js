@@ -225,6 +225,21 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     assert.ok(dlg.includes("Escape"), "dialog dismisses on Escape");
   });
 
+  it("stability: hydration-safe init + guarded fetches", () => {
+    assert.ok(fs.existsSync(path.join(root, "src/lib/api.ts")), "api helper present");
+    for (const f of ["src/app/bank/page.tsx", "src/app/play/page.tsx", "src/app/archive/[id]/page.tsx", "src/app/login/page.tsx"]) {
+      const src = read(f);
+      assert.ok(!src.includes("typeof window !== \"undefined\" ? new URLSearchParams"), `${f} reads URL at render`);
+      assert.ok(!src.includes("typeof window !== \"undefined\" &&"), `${f} reads browser at render`);
+    }
+    const bank = read("src/app/bank/page.tsx");
+    assert.ok(bank.includes("apiGet") && bank.includes("apiSend"), "bank uses guarded fetches");
+    const header = read("src/components/site-header.tsx");
+    assert.ok(header.includes("unhandledrejection"), "global rejection net present");
+    const play = read("src/app/play/page.tsx");
+    assert.ok(play.includes("Couldn't reach the server"), "round start/submit guarded");
+  });
+
   it("shadcn/ui used for frontend", () => {
     for (const f of ["src/components/ui/button.tsx", "src/components/ui/card.tsx", "src/components/ui/badge.tsx", "src/components/ui/input.tsx"]) {
       assert.ok(fs.existsSync(path.join(root, f)), `missing shadcn component ${f}`);

@@ -9,6 +9,7 @@ import { DriveTree } from "@/components/drive-tree";
 import { DriveGrid, DriveView, DriveFolderItem, DriveFile, GridAction, readDrag } from "@/components/drive-grid";
 import { ImportModal } from "@/components/import-modal";
 import { downloadFolderZip, downloadQuestionFile } from "@/lib/transport";
+import { apiGet, apiSend } from "@/lib/api";
 import { QuestionView } from "@/components/question-view";
 import { QuestionEditor, QForm } from "@/components/question-editor";
 import { Search, FolderPlus, FilePlus, ChevronRight, BookOpen, ArrowRight, ArrowLeft, ArrowUp, RefreshCw, Database, LayoutGrid, List, Share2, X, UserPlus, LogOut, Users, Upload } from "lucide-react";
@@ -51,8 +52,7 @@ export default function BankPage() {
   const [renameName, setRenameName] = useState("");
   const [moveTarget, setMoveTarget] = useState<DriveFile | null>(null);
   const [moveDest, setMoveDest] = useState<string>("");
-  const [view, setView] = useState<DriveView>(() =>
-    typeof window !== "undefined" && window.localStorage.getItem("drive-view") === "tiles" ? "tiles" : "details");
+  const [view, setView] = useState<DriveView>("details");
   const [dropCrumb, setDropCrumb] = useState<string | null>(null);
   const [importScope, setImportScope] = useState<{ parentId: string | null; name: string } | null>(null);
   const [showShare, setShowShare] = useState(false);
@@ -75,24 +75,31 @@ export default function BankPage() {
     const { folder, owner } = fromUrl();
     if (folder) setFolderId(folder);
     if (owner) setOwnerId(owner);
-    fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.user ?? null)).catch(() => {});
-    fetch("/api/topics").then((r) => (r.ok ? r.json() : [])).then((t) => setTopics(Array.isArray(t) ? t : [])).catch(() => {});
+    try {
+      if (window.localStorage.getItem("drive-view") === "tiles") setView("tiles");
+    } catch { /* private mode */ }
+    apiGet<{ user: { id: string } | null }>("/api/auth/me").then((r) => { if (r.ok) setMe(r.data?.user ?? null); });
+    apiGet<{ id: string; name: string; subject: string; exam: string }[]>("/api/topics").then((r) => { if (r.ok && Array.isArray(r.data)) setTopics(r.data); });
   }, []);
 
   const loadTree = useCallback(() => {
-    fetch("/api/drive/folders").then((r) => (r.ok ? r.json() : [])).then((d) => setTree(Array.isArray(d) ? d : []));
-    fetch("/api/drive/shares/mine").then((r) => (r.ok ? r.json() : [])).then((d) => setIncoming(Array.isArray(d) ? d : []));
+    apiGet<TreeFolder[]>("/api/drive/folders").then((r) => { if (r.ok && Array.isArray(r.data)) setTree(r.data); });
+    apiGet<IncomingShare[]>("/api/drive/shares/mine").then((r) => { if (r.ok && Array.isArray(r.data)) setIncoming(r.data); });
   }, []);
 
   const loadContents = useCallback((fid: string | null, oid: string | null) => {
     const params = new URLSearchParams();
     if (fid) params.set("folderId", fid);
     if (oid) params.set("ownerId", oid);
-    const url = `/api/drive/contents${params.toString() ? `?${params.toString()}` : ""}`;
-    fetch(url).then(async (r) => {
-      if (r.status === 401) { setFolders([]); setFiles([]); return; }
-      if (!r.ok) { toast((await r.json().catch(() => ({}))).error ?? "Couldn't open that folder"); return; }
-      const d = await r.json();
+    apiGet<{ folders: DriveFolderItem[]; questions: DriveFile[]; breadcrumbs: Crumb[]; access: string; owner: { name: string }; sharedEntries: typeof sharedEntries }>(
+      `/api/drive/contents${params.toString() ? `?${params.toString()}` : ""}`
+    ).then((r) => {
+      if (!r.ok) {
+        if (r.status === 401) { setFolders([]); setFiles([]); return; }
+        if (r.status) toast(r.error);
+        return;
+      }
+      const d = r.data!;
       setFolders(d.folders ?? []);
       const meId = me?.id;
       const qs = (d.questions ?? []) as DriveFile[];
@@ -151,19 +158,17 @@ export default function BankPage() {
 
   async function createFolder() {
     if (!newFolderName.trim()) { toast("Give the folder a name."); return; }
-    const res = await fetch("/api/drive/folders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newFolderName, parentId: folderId, ownerId: ownerId ?? undefined }) });
-    const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
-    toast(`Folder “${d.name}” created.`);
+    const r = await apiSend<{ name: string }>("/api/drive/folders", "POST", { name: newFolderName, parentId: folderId, ownerId: ownerId ?? undefined });
+    if (!r.ok) { if (r.status) toast(r.error); return; }
+    toast(`Folder “${r.data?.name}” created.`);
     setNewFolderName(""); setShowNewFolder(false);
     loadTree(); loadContents(folderId, ownerId);
   }
 
   async function createQuestion(f: QForm) {
     if (sharedMode && !folderId) { toast("Open or create a folder first — files live in folders here."); return; }
-    const res = await fetch("/api/drive/questions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, folderId }) });
-    const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    const r = await apiSend("/api/drive/questions", "POST", { ...f, folderId });
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Question filed in this folder.");
     setShowNewQ(false);
     loadContents(folderId, ownerId);
@@ -171,24 +176,26 @@ export default function BankPage() {
 
   function openFile(id: string, autoEdit = false) {
     setViewId(id); setViewQ(null); setEditing(false);
-    fetch(`/api/bank/${id}`).then((r) => r.json()).then((d) => { setViewQ(d.question ?? null); if (autoEdit && d.question) setEditing(true); });
+    apiGet<{ question: unknown }>("/api/bank/" + id).then((r) => {
+      if (!r.ok) { if (r.status) toast(r.error); setViewId(null); return; }
+      setViewQ(r.data?.question ?? null);
+      if (autoEdit && r.data?.question) setEditing(true);
+    });
   }
 
   async function saveEdit(f: QForm) {
     if (!viewId) return;
-    const res = await fetch(`/api/bank/${viewId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl }) });
-    const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    const r = await apiSend<unknown>(`/api/bank/${viewId}`, "PATCH", { stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl });
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Question updated.");
-    setEditing(false); setViewQ(d);
+    setEditing(false); setViewQ(r.data);
     loadContents(folderId, ownerId);
   }
 
   async function doRename() {
     if (!renameTarget || !renameName.trim()) return;
-    const res = await fetch(`/api/drive/folders/${renameTarget.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: renameName }) });
-    const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    const r = await apiSend(`/api/drive/folders/${renameTarget.id}`, "PATCH", { name: renameName });
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Folder renamed.");
     setRenameTarget(null);
     loadTree(); loadContents(folderId, ownerId);
@@ -196,18 +203,16 @@ export default function BankPage() {
 
   async function doDeleteFolder(id: string) {
     if (!confirm("Delete this folder? It must be empty first.")) return;
-    const res = await fetch(`/api/drive/folders/${id}`, { method: "DELETE" });
-    const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    const r = await apiSend(`/api/drive/folders/${id}`, "DELETE");
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Folder deleted.");
     loadTree(); loadContents(folderId, ownerId);
   }
 
   async function doMoveFile() {
     if (!moveTarget) return;
-    const res = await fetch(`/api/bank/${moveTarget.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ folderId: moveDest || null }) });
-    const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    const r = await apiSend(`/api/bank/${moveTarget.id}`, "PATCH", { folderId: moveDest || null });
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Question moved.");
     setMoveTarget(null);
     loadContents(folderId, ownerId);
@@ -217,9 +222,8 @@ export default function BankPage() {
     if (dest?.startsWith("bank:")) { toast("Open that bank first, then drop into a folder."); return; }
     const url = kind === "file" ? `/api/bank/${id}` : `/api/drive/folders/${id}`;
     const body = kind === "file" ? { folderId: dest } : { parentId: dest };
-    const res = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const d = await res.json().catch(() => ({}));
-    if (!res.ok) { toast(d.error ?? "Move failed"); return; }
+    const r = await apiSend(url, "PATCH", body);
+    if (!r.ok) { if (r.status) toast(r.error || "Move failed"); return; }
     toast(kind === "file" ? "Question moved." : "Folder moved.");
     loadTree(); loadContents(folderId, ownerId);
   }
@@ -251,21 +255,20 @@ export default function BankPage() {
 
   async function doDownloadFolder(id: string) {
     toast("Preparing download…");
-    const res = await fetch(`/api/drive/export?folderId=${id}`);
-    const d = await res.json().catch(() => ({}));
-    if (!res.ok) { toast(d.error ?? "Export failed"); return; }
+    const r = await apiGet<{ bundle: Parameters<typeof downloadFolderZip>[0]; truncated?: boolean }>(`/api/drive/export?folderId=${id}`);
+    if (!r.ok) { if (r.status) toast(r.error || "Export failed"); return; }
+    if (!r.data?.bundle) { toast("Export failed"); return; }
     try {
-      await downloadFolderZip(d.bundle);
+      await downloadFolderZip(r.data.bundle);
       toast("Real folder downloaded.");
     } catch { toast("Couldn't build the zip."); }
-    if (d.truncated) toast("Large folder — export capped at 500 questions.");
+    if (r.data.truncated) toast("Large folder — export capped at 500 questions.");
   }
 
   async function doCopyFolder(id: string) {
-    const res = await fetch(`/api/drive/folders/${id}/copy`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
-    const d = await res.json().catch(() => ({}));
-    if (!res.ok) { toast(d.error ?? "Copy failed"); return; }
-    toast(`Copied — ${d.questions} questions.`);
+    const r = await apiSend<{ questions: number }>(`/api/drive/folders/${id}/copy`, "POST", {});
+    if (!r.ok) { if (r.status) toast(r.error || "Copy failed"); return; }
+    toast(`Copied — ${r.data?.questions ?? 0} questions.`);
     loadTree(); loadContents(folderId, ownerId);
   }
 
@@ -276,16 +279,17 @@ export default function BankPage() {
       toast("Question file downloaded.");
       return;
     }
-    fetch(`/api/bank/${id}`).then((r) => r.json()).then((d) => {
-      if (d.question) { downloadQuestionFile(d.question); toast("Question file downloaded."); }
-      else toast("Couldn't load that file.");
+    apiGet<{ question: Parameters<typeof downloadQuestionFile>[0] | null }>(`/api/bank/${id}`).then((r) => {
+      if (!r.ok || !r.data?.question) { if (!r.ok && r.status) toast(r.error); else if (!r.data?.question) toast("Couldn't load that file."); return; }
+      downloadQuestionFile(r.data.question);
+      toast("Question file downloaded.");
     });
   }
 
   async function doDeleteFile(id: string) {
     if (!confirm("Delete this question file? History stays, the file goes.")) return;
-    const res = await fetch(`/api/bank/${id}`, { method: "DELETE" });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    const r = await apiSend(`/api/bank/${id}`, "DELETE");
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("File deleted.");
     if (viewId === id) { setViewId(null); setViewQ(null); }
     loadContents(folderId, ownerId);
@@ -294,8 +298,8 @@ export default function BankPage() {
   async function doPublishFolder(id: string) {
     const f = [...folders, ...tree].find((x) => x.id === id) as (TreeFolder & { isPublic?: boolean; publicAccess?: string }) | undefined;
     const next = !(f as { isPublic?: boolean } | undefined)?.isPublic;
-    const res = await fetch(`/api/drive/folders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isPublic: next, ...(next ? { publicAccess: (f as { publicAccess?: string } | undefined)?.publicAccess ?? "view" } : {}) }) });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    const r = await apiSend(`/api/drive/folders/${id}`, "PATCH", { isPublic: next, ...(next ? { publicAccess: (f as { publicAccess?: string } | undefined)?.publicAccess ?? "view" } : {}) });
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast(next ? "Folder is public — find it in the archive." : "Folder is private again.");
     loadTree(); loadContents(folderId, ownerId);
   }
@@ -308,8 +312,8 @@ export default function BankPage() {
     setPub(null);
     loadShares(s);
     if (s) {
-      fetch(`/api/drive/contents?folderId=${s}`).then((r) => (r.ok ? r.json() : null)).then((d) => {
-        const c = d?.current;
+      apiGet<{ current: { isPublic?: boolean; publicAccess?: string } | null }>(`/api/drive/contents?folderId=${s}`).then((r) => {
+        const c = r.ok ? r.data?.current : null;
         if (c) setPub({ isPublic: !!c.isPublic, publicAccess: c.publicAccess ?? "view" });
       });
     }
@@ -319,30 +323,29 @@ export default function BankPage() {
     const s = scope !== undefined ? scope : shareScope;
     const p = new URLSearchParams();
     if (s) p.set("folderId", s);
-    fetch(`/api/drive/shares${p.toString() ? `?${p.toString()}` : ""}`).then((r) => (r.ok ? r.json() : [])).then(setShareRows);
+    apiGet<ShareRow[]>(`/api/drive/shares${p.toString() ? `?${p.toString()}` : ""}`).then((r) => { if (r.ok && Array.isArray(r.data)) setShareRows(r.data); });
   }
 
   async function invite() {
     if (!shareEmail.trim()) { toast("Enter their email."); return; }
-    const res = await fetch("/api/drive/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: shareEmail, role: shareRole, folderId: shareScope }) });
-    const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    const r = await apiSend(`/api/drive/shares`, "POST", { email: shareEmail, role: shareRole, folderId: shareScope });
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast(`Shared as ${shareRole}.`);
     setShareEmail("");
     loadShares();
   }
 
   async function unshare(id: string) {
-    const res = await fetch(`/api/drive/shares/${id}`, { method: "DELETE" });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    const r = await apiSend(`/api/drive/shares/${id}`, "DELETE");
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Share removed.");
     loadShares();
   }
 
   async function leave(id: string) {
     if (!confirm("Leave this shared bank? It will vanish from your drive.")) return;
-    const res = await fetch(`/api/drive/shares/${id}`, { method: "DELETE" });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    const r = await apiSend(`/api/drive/shares/${id}`, "DELETE");
+    if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Left the shared bank.");
     if (ownerId) nav(null, null);
     loadTree(); loadContents(folderId, ownerId);

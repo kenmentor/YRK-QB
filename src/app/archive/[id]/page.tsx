@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import { Banner } from "@/components/activity-banner";
 import { ArrowLeft, Play, CheckCircle2, Pencil } from "lucide-react";
+import { useSession } from "@/lib/use-session";
 import { cn } from "@/lib/utils";
 
 interface Meta {
@@ -29,24 +30,34 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [mode, setMode] = useState<string>("practice");
   const [accepted, setAccepted] = useState(false);
-  const [me, setMe] = useState<{ id: string } | null>(null);
+  const { user: me, loaded: authLoaded } = useSession();
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
     const m = new URLSearchParams(window.location.search).get("mode");
     if (m === "practice" || m === "selftest" || m === "exam") setMode(m);
-    fetch(`/api/activities/${params.id}`).then(async (r) => {
-      if (!r.ok) { setGone(true); return; }
+    fetch(`/api/activities/${params.id}`).then(async (r) => {      if (!r.ok) { setGone(true); return; }
       const d = await r.json();
       setMeta(d.meta);
       const modes = d.meta.modes as string[];
       setMode((m) => (modes.includes(m) ? m : modes[0] ?? "practice"));
     });
-    fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.user ?? null)).catch(() => {});
   }, [params.id]);
 
   if (gone) return <div className="grid gap-3 py-10 text-center"><div className="font-bold">Artifact not found or private.</div><a href="/archive" className="text-sm text-indigo-600 underline">Back to archive</a></div>;
-  if (!meta) return <div className="py-10 text-center text-sm text-slate-500">Loading artifact…</div>;
+  if (!meta) {
+    return (
+      <div className="grid gap-5">
+        <div className="h-36 animate-pulse rounded-3xl bg-slate-100" />
+        <div className="grid gap-2">
+          <div className="h-6 w-2/3 animate-pulse rounded-md bg-slate-100" />
+          <div className="h-4 w-full animate-pulse rounded-md bg-slate-100" />
+          <div className="h-4 w-1/2 animate-pulse rounded-md bg-slate-100" />
+        </div>
+        <div className="h-48 animate-pulse rounded-3xl bg-slate-100" />
+      </div>
+    );
+  }
 
   const rules = mode === "exam" ? meta.rulesTest : meta.rulesPractice;
 
@@ -101,8 +112,8 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
             </label>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="accent" size="lg" onClick={start} disabled={!accepted}><Play className="h-4 w-4" /> {me ? `Start ${MODE_LABEL[mode]}` : "Log in & start"}</Button>
-            {!me && <span className="self-center text-[13px] text-slate-400">Rounds record to your history, so an account is needed to play.</span>}
+            <Button variant="accent" size="lg" onClick={start} disabled={!accepted || !authLoaded}><Play className="h-4 w-4" /> {!authLoaded ? "Loading…" : me ? `Start ${MODE_LABEL[mode]}` : "Log in & start"}</Button>
+            {authLoaded && !me && <span className="self-center text-[13px] text-slate-400">Rounds record to your history, so an account is needed to play.</span>}
             {accepted && me && <span className="flex items-center gap-1 self-center text-[13px] text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Rules accepted</span>}
           </div>
         </CardContent>

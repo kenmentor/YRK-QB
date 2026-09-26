@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHero, EmptyState } from "@/components/page-hero";
 import { Banner } from "@/components/activity-banner";
 import { NewActivityButton } from "@/components/new-activity-button";
+import { useSession } from "@/lib/use-session";
 import { Search, Folder, ArrowRight, Globe } from "lucide-react";
 
 interface Activity { id: string; title: string; banner: string; details: string; modes: string[]; ownerName: string; contributors: { id: string; name: string }[]; questionCount: number; category: string; sector: string; }
@@ -23,11 +24,11 @@ export default function ArchivePage() {
   const [folders, setFolders] = useState<PubFolder[]>([]);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("");
-  const [me, setMe] = useState<{ id: string } | null>(null);
+  const { user: me, loaded: authLoaded } = useSession();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/archive").then((r) => r.json()).then((d) => { setActs(d.activities ?? []); setFolders(d.folders ?? []); });
-    fetch("/api/auth/me").then((r) => r.json()).then((d) => setMe(d.user ?? null)).catch(() => {});
+    fetch("/api/archive").then((r) => r.json()).then((d) => { setActs(d.activities ?? []); setFolders(d.folders ?? []); }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const matchQ = (s: string) => !q || s.toLowerCase().includes(q.toLowerCase());
@@ -39,7 +40,7 @@ export default function ArchivePage() {
     <div className="grid gap-6">
       <PageHero eyebrow="Public archive" title="Artifacts & public folders"
         description={me ? "Published by the community. Open one for its rules, then play — or start your own." : "Published by the community. Log in to play and track history."}
-        actions={me ? <NewActivityButton /> : <a href="/login"><Button variant="accent">Log in to play</Button></a>} tone="dark" />
+        actions={!authLoaded ? undefined : me ? <NewActivityButton /> : <a href="/login"><Button variant="accent">Log in to play</Button></a>} tone="dark" />
       <Card><CardContent className="grid gap-3 p-4">
         <div className="relative"><Search className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
           <Input className="pl-10" placeholder="Search artifacts and folders…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
@@ -52,8 +53,21 @@ export default function ArchivePage() {
       </CardContent></Card>
 
       <section className="grid gap-5">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400"><Globe className="h-4 w-4" /> Activities · {fActs.length}</h2>
-        {actGroups.length ? actGroups.map((g) => (
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400"><Globe className="h-4 w-4" /> Activities · {loading ? "…" : fActs.length}</h2>
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white">
+                <div className="h-28 animate-pulse bg-slate-100" />
+                <div className="grid gap-2 p-5">
+                  <div className="h-5 w-3/4 animate-pulse rounded-md bg-slate-100" />
+                  <div className="h-4 w-1/2 animate-pulse rounded-md bg-slate-100" />
+                  <div className="h-4 w-full animate-pulse rounded-md bg-slate-100" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : actGroups.length ? actGroups.map((g) => (
           <div key={g.cat} className="grid gap-3">
             <h3 className="flex items-center gap-2 text-[13px] font-bold text-slate-600">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-900 text-[10px] font-black text-white">{LADDER.indexOf(g.cat) + 1}</span>
@@ -85,8 +99,17 @@ export default function ArchivePage() {
       </section>
 
       <section className="grid gap-3">
-        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400"><Folder className="h-4 w-4" /> Public folders · {fFolders.length}</h2>
-        {fFolders.length ? (
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.12em] text-slate-400"><Folder className="h-4 w-4" /> Public folders · {loading ? "…" : fFolders.length}</h2>
+        {loading ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4">
+                <span className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-100" />
+                <div className="grid flex-1 gap-1.5"><span className="h-4 w-2/3 animate-pulse rounded-md bg-slate-100" /><span className="h-3 w-1/2 animate-pulse rounded-md bg-slate-100" /></div>
+              </div>
+            ))}
+          </div>
+        ) : fFolders.length ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {fFolders.map((f) => (
               <a key={f.id} href={`/archive/folder/${f.id}`} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-soft transition hover:shadow-lift">

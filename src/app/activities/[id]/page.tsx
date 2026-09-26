@@ -175,7 +175,15 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
     window.location.href = "/play";
   }
 
-  if (!meta) return <div className="py-10 text-center text-sm text-slate-500">Loading builder…</div>;
+  if (!meta) return (
+    <div className="grid gap-4">
+      <div className="h-36 animate-pulse rounded-3xl bg-slate-100" />
+      <div className="h-12 animate-pulse rounded-2xl bg-slate-100" />
+      <div className="grid gap-2">
+        {[0, 1, 2, 3].map((i) => <div key={i} className="h-12 animate-pulse rounded-xl bg-slate-100" />)}
+      </div>
+    </div>
+  );
   const isOwner = meta.role === "owner";
   const linkedKeys = new Set(assembly.map((r) => `${r.kind}:${r.id}`));
 

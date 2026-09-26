@@ -315,4 +315,19 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     assert.ok(play.includes("(cur.type ??") || play.includes("cur.type ??"), "runner type null-safe");
     assert.ok(play.includes("(cur.stem ??"), "runner stem null-safe");
   });
+  it("auth stability + skeletons: no login flicker, skeleton-first", () => {
+    assert.ok(fs.existsSync(path.join(root, "src/lib/use-session.ts")), "session hook present");
+    const header = read("src/components/site-header.tsx");
+    assert.ok(header.includes("useSession"), "header uses shared session");
+    assert.ok(header.includes("animate-pulse"), "header skeleton present");
+    const nav = read("src/components/mobile-nav.tsx");
+    assert.ok(!nav.includes("useSession") && !nav.includes("/api/auth/me"), "tabs never fetch session");
+    const login = read("src/app/login/page.tsx");
+    assert.ok(login.includes("useSession"), "login redirects when authed");
+    for (const f of ["src/app/archive/page.tsx", "src/app/archive/[id]/page.tsx", "src/app/activities/[id]/page.tsx"]) {
+      assert.ok(read(f).includes("animate-pulse"), `${f} skeleton-first`);
+    }
+    const bank = read("src/app/bank/page.tsx");
+    assert.ok(bank.includes("authLoaded"), "bank gates on loaded session");
+  });
 });

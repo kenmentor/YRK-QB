@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
+import { useSession } from "@/lib/use-session";
 import { cn } from "@/lib/utils";
 import { Bell, Menu, X, LogOut, UserRound, ShieldCheck, ChevronRight, FileCheck2 } from "lucide-react";
 
@@ -37,20 +38,17 @@ function NavLink({ href, label, active, onClick, mobile }: { href: string; label
 }
 
 export function SiteHeader() {
-  const [user, setUser] = useState<{ email: string; name: string; role: string } | null>(null);
+  const { user, loaded } = useSession();
   const [unread, setUnread] = useState(0);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const path = usePathname();
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
-    fetch("/api/auth/me").then((r) => r.json()).then((d) => {
-      setUser(d.user);
-      setIsAdmin(d.user?.role === "admin");
-    }).catch(() => {});
+    if (!loaded || !user) { setUnread(0); return; }
     fetch("/api/notifications").then((r) => (r.ok ? r.json() : [])).then((list) => setUnread(list.filter((n: { read: boolean }) => !n.read).length)).catch(() => {});
-  }, [path]);
+  }, [path, loaded, user]);
   useEffect(() => {
     setMenuOpen(false);
     setUserOpen(false);
@@ -69,7 +67,6 @@ export function SiteHeader() {
 
   async function logout() {
     await fetch("/api/auth/me", { method: "POST" });
-    setUser(null);
     window.location.href = "/";
   }
 
@@ -96,7 +93,15 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
-          {user ? (
+          {!loaded ? (
+            <>
+              <span className="h-10 w-10 animate-pulse rounded-xl bg-slate-100" />
+              <span className="hidden h-9 w-24 animate-pulse rounded-xl bg-slate-100 md:block" />
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-300 md:hidden">
+                <Menu className="h-5 w-5" />
+              </span>
+            </>
+          ) : user ? (
             <>
               <a href="/notifications" title="Notifications"
                 className="relative flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
@@ -157,7 +162,9 @@ export function SiteHeader() {
               <NavLink key={l.href} mobile href={l.href} label={l.label} active={!!path?.startsWith(l.href)} />
             ))}
             {isAdmin && <NavLink mobile href="/admin/reviews" label="Review inbox" active={!!path?.startsWith("/admin")} />}
-            {user ? (
+            {!loaded ? (
+              <div className="grid gap-1.5 py-1"><span className="h-12 animate-pulse rounded-xl bg-slate-100" /></div>
+            ) : user ? (
               <>
                 <NavLink mobile href="/profile" label="Profile" active={path === "/profile"} />
                 <button onClick={logout} className="flex items-center justify-between rounded-xl px-4 py-3.5 text-left text-[15px] font-medium text-red-600 hover:bg-red-50">

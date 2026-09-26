@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSession } from "@/lib/use-session";
 
 export default function LoginPage() {
+  const { user, loaded } = useSession();
   const [email, setEmail] = useState("ama@example.com");
   const [password, setPassword] = useState("password123");
   const [error, setError] = useState("");
@@ -13,6 +15,14 @@ export default function LoginPage() {
   useEffect(() => {
     setNext(new URLSearchParams(window.location.search).get("next"));
   }, []);
+  // Already signed in: don't flash the form, leave immediately.
+  useEffect(() => {
+    if (loaded && user) {
+      const params = new URLSearchParams(window.location.search);
+      const n = params.get("next");
+      window.location.replace(n && n.startsWith("/") ? n : "/");
+    }
+  }, [loaded, user]);
   async function submit() {
     setError(""); setBusy(true);
     const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
@@ -20,6 +30,14 @@ export default function LoginPage() {
     setBusy(false);
     if (!res.ok) { setError(data.error); return; }
     window.location.href = next && next.startsWith("/") ? next : "/";
+  }
+  if (!loaded || user) {
+    return (
+      <div className="mx-auto grid w-full max-w-md gap-3">
+        <div className="h-10 w-32 animate-pulse rounded-xl bg-slate-100" />
+        <div className="h-64 animate-pulse rounded-3xl bg-slate-100" />
+      </div>
+    );
   }
   return (
     <div className="mx-auto w-full max-w-md">

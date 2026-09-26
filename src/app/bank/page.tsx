@@ -10,6 +10,7 @@ import { DriveGrid, DriveView, DriveFolderItem, DriveFile, GridAction, readDrag 
 import { ImportModal } from "@/components/import-modal";
 import { downloadFolderZip, downloadQuestionFile } from "@/lib/transport";
 import { apiGet, apiSend } from "@/lib/api";
+import { useSession } from "@/lib/use-session";
 import { QuestionView } from "@/components/question-view";
 import { QuestionEditor, QForm } from "@/components/question-editor";
 import { Search, FolderPlus, FilePlus, ChevronRight, BookOpen, ArrowRight, ArrowLeft, ArrowUp, RefreshCw, Database, LayoutGrid, List, Share2, X, UserPlus, LogOut, Users, Upload, PanelLeft, MoreVertical } from "lucide-react";
@@ -38,7 +39,7 @@ export default function BankPage() {
   const [access, setAccess] = useState<string>("owner");
   const [ownerName, setOwnerName] = useState("");
   const [q, setQ] = useState("");
-  const [me, setMe] = useState<{ id: string } | null>(null);
+  const { user: me, loaded: authLoaded } = useSession();
   const [loading, setLoading] = useState(true);
 
   // modals
@@ -81,7 +82,6 @@ export default function BankPage() {
     try {
       if (window.localStorage.getItem("drive-view") === "tiles") setView("tiles");
     } catch { /* private mode */ }
-    apiGet<{ user: { id: string } | null }>("/api/auth/me").then((r) => { if (r.ok) setMe(r.data?.user ?? null); });
     apiGet<{ id: string; name: string; subject: string; exam: string }[]>("/api/topics").then((r) => { if (r.ok && Array.isArray(r.data)) setTopics(r.data); });
   }, []);
 
@@ -370,7 +370,7 @@ export default function BankPage() {
           <button onClick={() => setTab("bank")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "bank" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>My Bank</button>
           <button onClick={() => setTab("explore")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "explore" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>Explore</button>
         </div>
-        {tab === "bank" && !me && <span className="text-[13px] text-slate-400"><a className="text-indigo-600 underline" href="/login">Log in</a> to use your bank.</span>}
+        {tab === "bank" && authLoaded && !me && <span className="text-[13px] text-slate-400"><a className="text-indigo-600 underline" href="/login">Log in</a> to use your bank.</span>}
         {tab === "bank" && sharedMode && <Badge tone="in_review">Viewing {ownerName}&rsquo;s bank · {access}</Badge>}
       </div>
 

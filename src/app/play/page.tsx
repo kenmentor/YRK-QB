@@ -74,6 +74,7 @@ export default function QuizPage() {
   const [activityId, setActivityId] = useState("");
   const [activityTitle, setActivityTitle] = useState("");
   const [activities, setActivities] = useState<{ id: string; title: string; banner: string; ownerName: string; questionCount: number; modes: string[]; visibility?: string; category?: string; sector?: string }[]>([]);
+  const [actsLoading, setActsLoading] = useState(true);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [topicId, setTopicId] = useState("");
   const [subjectId, setSubjectId] = useState("");
@@ -124,7 +125,7 @@ export default function QuizPage() {
       const seen = new Set<string>();
       const all = [...(m ?? []), ...(sh ?? []), ...(p ?? [])].filter((a) => (seen.has(a.id) ? false : (seen.add(a.id), true)));
       setActivities(all);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setActsLoading(false));
   }, []);
   useEffect(() => {
     if (phase !== "running" || mode === "practice" || result) return;
@@ -299,6 +300,16 @@ export default function QuizPage() {
       <div className="grid gap-5">
         <PageHero eyebrow="Play" title="Start sharp" description="Frozen at start. Practice guides instantly, self test runs a soft clock, test runs the strict server clock." tone="dark" />
         {!!activities.length && !sourceId && <ActivityPicker activities={activities} mode={mode} />}
+        {actsLoading && !activities.length && (
+          <div className="mx-auto grid w-full max-w-2xl gap-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-3">
+                <span className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-100" />
+                <div className="grid flex-1 gap-1.5"><span className="h-4 w-2/3 animate-pulse rounded-md bg-slate-100" /><span className="h-3 w-1/2 animate-pulse rounded-md bg-slate-100" /></div>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="mx-auto grid w-full max-w-2xl gap-4">
         <Card><CardHeader><CardTitle>Configure your round</CardTitle><CardDescription>Segment, size and pace.</CardDescription></CardHeader><CardContent className="grid gap-4">
           <div className="flex flex-wrap gap-2">

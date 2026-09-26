@@ -74,7 +74,7 @@ export default function ExamSetsPage() {
       ) : <EmptyState title="No exam sets yet" hint="Profile your first exam, then fill it with bank questions." action={<Button size="sm" onClick={() => setShowNew(true)}>New exam set</Button>} />}
 
       {showNew && (
-        <div className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-slate-900/50 p-4" onClick={() => setShowNew(false)}>
+        <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-slate-900/50 p-4" onClick={() => setShowNew(false)}>
           <div className="grid w-full max-w-lg gap-3 rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between"><div className="font-bold">New exam set</div>
               <button onClick={() => setShowNew(false)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button></div>

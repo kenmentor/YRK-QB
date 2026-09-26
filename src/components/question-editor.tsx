@@ -444,7 +444,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit }: {
         </CardContent></Card>
 
         {/* sticky action bar */}
-        <div className="sticky bottom-3 z-10 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-3.5 py-2.5 shadow-lift backdrop-blur">
+        <div className="sticky-safe sticky bottom-3 z-10 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-3.5 py-2.5 shadow-lift backdrop-blur">
           <span className={cn("min-w-0 flex-1 truncate text-[13px]", errors.length ? "font-medium text-amber-700" : "text-slate-400")} title={errors.join(" ")}>
             {errors.length ? `${errors.length} to fix · ${errors[0]}` : "Ready"}
           </span>

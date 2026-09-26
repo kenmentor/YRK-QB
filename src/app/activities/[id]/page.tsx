@@ -336,7 +336,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
       )}
 
       {showNewQ && (
-        <div className="fixed inset-0 z-40 overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={() => setShowNewQ(false)}>
+        <div className="yrk-sheet fixed inset-0 z-40 overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={() => setShowNewQ(false)}>
           <div className="mx-auto max-w-4xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between text-white">
               <span className="text-sm font-semibold">New question — files to your bank root and links here</span>

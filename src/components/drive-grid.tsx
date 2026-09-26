@@ -274,7 +274,7 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
             onDrop={dropOn(f.id)}
             onClick={(e) => { e.stopPropagation(); clickRow(f.id, () => onOpenFolder(f.id, f.ownerId ?? null)); }}
             onDoubleClick={() => onOpenFolder(f.id, f.ownerId ?? null)}
-            className={cn("group relative grid cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]",
+            className={cn("group relative grid min-h-[44px] cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]",
               dropTarget === f.id ? "bg-indigo-100 ring-1 ring-inset ring-indigo-300" :
               selected === f.id ? "bg-indigo-50 hover:bg-indigo-50" : "hover:bg-slate-50")}
           >
@@ -297,7 +297,7 @@ export function DriveGrid({ folders, files, view, canManage, isOwn, sharedBy, on
               onDragStart={(e) => startDrag(e, { kind: "file", id: q.id })}
               onClick={(e) => { e.stopPropagation(); clickRow(q.id, () => onOpenFile(q.id)); }}
               onDoubleClick={() => onOpenFile(q.id)}
-              className={cn("group relative grid cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]", selected === q.id ? "bg-indigo-50 hover:bg-indigo-50" : "hover:bg-slate-50")}
+              className={cn("group relative grid min-h-[44px] cursor-default grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-100 px-3 py-2 text-sm last:border-0 sm:grid-cols-[minmax(0,1fr)_160px_150px_28px]", selected === q.id ? "bg-indigo-50 hover:bg-indigo-50" : "hover:bg-slate-50")}
             >
               <span className="flex min-w-0 items-center gap-2.5">
                 <Icon className="h-[18px] w-[18px] shrink-0 text-indigo-500" strokeWidth={1.75} />
@@ -348,7 +348,7 @@ function RowMenu({ id, menu, setMenu, selected, show, items }: {
   return (
     <>
       <button
-        className={cn("rounded-md p-1 transition hover:bg-slate-200/70 hover:text-slate-700", menu === id || selected ? "text-slate-500 opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
+        className={cn("rounded-md p-2 transition hover:bg-slate-200/70 hover:text-slate-700 sm:p-1", menu === id || selected ? "text-slate-500 opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
         onClick={(e) => { e.stopPropagation(); setMenu(menu === id ? null : id); }}
       >
         <MoreVertical className="h-4 w-4" />
@@ -375,7 +375,7 @@ function TileMenu({ id, menu, setMenu, show, items }: {
   return (
     <>
       <button
-        className={cn("absolute right-2 top-2 rounded-md p-1.5 transition hover:bg-slate-100 hover:text-slate-700", menu === id ? "text-slate-500 opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
+        className={cn("absolute right-2 top-2 rounded-md p-2 transition hover:bg-slate-100 hover:text-slate-700 sm:p-1.5", menu === id ? "text-slate-500 opacity-100" : "text-slate-300 opacity-0 group-hover:opacity-100")}
         onClick={(e) => { e.stopPropagation(); setMenu(menu === id ? null : id); }}
       >
         <MoreVertical className="h-4 w-4" />

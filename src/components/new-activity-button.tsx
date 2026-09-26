@@ -48,7 +48,7 @@ export function NewActivityButton({ variant, size, label }: {
         <Plus className="h-4 w-4" /> {label ?? "New activity"}
       </Button>
       {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-900/55 p-4 backdrop-blur-[2px]" onClick={() => setOpen(false)}>
+        <div className="yrk-sheet fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-900/55 p-4 backdrop-blur-[2px]" onClick={() => setOpen(false)}>
           <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-lift" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50"><FileStack className="h-5 w-5 text-indigo-600" /></span>

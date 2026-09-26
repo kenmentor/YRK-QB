@@ -552,7 +552,7 @@ export default function QuizPage() {
             {showInstant && ((isFill && picked.length > 0 && picked[0]) || (isTheory && picked.length > 0 && picked[0])) && (
               <div className="rounded-lg bg-slate-50 p-3 text-sm"><span className="font-medium">{isTheory ? "Marking guide, compare: " : ""}</span>{cur.explanation}</div>
             )}
-            <div className="sticky bottom-3 z-10 mt-1 flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-lift backdrop-blur">
+            <div className="sticky-safe sticky bottom-3 z-10 mt-1 flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white/95 px-2 py-2 shadow-lift backdrop-blur">
               <Button variant="ghost" size="sm" disabled={idx === 0} onClick={() => setIdx((i) => i - 1)}><ArrowLeft className="h-4 w-4" /><span className="hidden sm:inline">Prev</span></Button>
               <Button variant="ghost" size="sm" onClick={() => setFlagged((f) => ({ ...f, [cur.id]: !f[cur.id] }))} className={flagged[cur.id] ? "text-amber-600" : ""}><Flag className="h-4 w-4" /><span className="hidden sm:inline">{flagged[cur.id] ? "Flagged" : "Flag"}</span></Button>
               <span className="min-w-0 flex-1 truncate text-center text-xs tabular-nums text-slate-400">{idx + 1} / {items.length}</span>
@@ -574,7 +574,7 @@ export default function QuizPage() {
               const done = answers[q.id]?.some((a) => String(a).trim()) || (rubric[q.id]?.some((v) => Number(v) > 0));
               return (
                 <button key={q.id} onClick={() => { setIdx(i); setShowPalette(false); }} title={q.stem}
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold transition ${i === idx ? "border-slate-900 bg-slate-900 text-white" : done ? "border-green-600 bg-green-50 text-green-900" : "border-slate-200 bg-white hover:border-slate-400"} ${flagged[q.id] ? "ring-2 ring-amber-400" : ""}`}>{i + 1}</button>
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg border text-xs font-semibold transition sm:h-8 sm:w-8 ${i === idx ? "border-slate-900 bg-slate-900 text-white" : done ? "border-green-600 bg-green-50 text-green-900" : "border-slate-200 bg-white hover:border-slate-400"} ${flagged[q.id] ? "ring-2 ring-amber-400" : ""}`}>{i + 1}</button>
               );
             })}
           </div>

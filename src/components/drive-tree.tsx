@@ -59,13 +59,13 @@ export function DriveTree({ folders, currentId, counts, onSelect, onDropMove }: 
         <div key={f.id}>
           <div className="flex items-center gap-0.5">
             {hasKids ? (
-              <button onClick={() => toggle(f.id)} className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600" title={expanded ? "Collapse" : "Expand"}>
+              <button onClick={() => toggle(f.id)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:h-6 sm:w-6" title={expanded ? "Collapse" : "Expand"}>
                 {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               </button>
             ) : <span className="w-6 shrink-0" />}
             <button
               onClick={() => onSelect(f.id, f.ownerId ?? null)}
-              className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] transition", active ? "bg-indigo-50 font-semibold text-indigo-700" : dropId === f.id ? "bg-indigo-100 ring-1 ring-indigo-300" : "text-slate-600 hover:bg-slate-100")}
+              className={cn("flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition sm:py-1.5 sm:text-[13px]", active ? "bg-indigo-50 font-semibold text-indigo-700" : dropId === f.id ? "bg-indigo-100 ring-1 ring-indigo-300" : "text-slate-600 hover:bg-slate-100")}
               style={{ paddingLeft: `${8 + depth * 2}px` }}
               {...dropProps(f.id, f.id)}
             >

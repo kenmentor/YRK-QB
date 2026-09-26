@@ -56,7 +56,7 @@ export function ImportModal({ scopeName, parentId, onDone, onClose }: {
   const counts = parsed ? countBundle(parsed.bundle) : null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
+    <div className="yrk-sheet fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
       <div className="grid max-h-[90dvh] w-full max-w-md gap-3 overflow-y-auto rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-2">
           <div className="text-sm font-bold">Import into “{scopeName}”</div>

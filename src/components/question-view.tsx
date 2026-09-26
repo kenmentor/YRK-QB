@@ -127,7 +127,7 @@ export function QuestionView({ q, canEdit, onEdit, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={onClose}>
+    <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={onClose}>
       <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-3.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50"><Icon className="h-4.5 w-4.5 text-indigo-600" /></span>

@@ -74,7 +74,7 @@ export default function ContributePage({ params }: { params: { id: string } }) {
       <div className="flex justify-center"><a href="/contributions"><Button variant="ghost" size="sm">See my commits</Button></a></div>
 
       {showModal && pending && (
-        <div className="yrk-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
+        <div className="yrk-sheet yrk-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onClick={() => setShowModal(false)}>
           <Card className="yrk-modal max-h-[90dvh] w-full max-w-md overflow-y-auto shadow-lift"><div onClick={(e) => e.stopPropagation()}>
             <CardHeader><CardTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-600" /> Commit this question?</CardTitle>
               <CardDescription>An admin will review and commit it to {subject.name}. You’ll get a notification: committed (+message), cancelled with a message, or cancelled with the default note.</CardDescription></CardHeader>

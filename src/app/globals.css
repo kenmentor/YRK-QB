@@ -32,6 +32,32 @@ body {
 /* ---- mobile native feel ---- */
 * { -webkit-tap-highlight-color: transparent; }
 
+/* bottom sheets: any .yrk-sheet overlay docks its card to the bottom on phones */
+@keyframes yrk-sheet-up {
+  from { opacity: 0; transform: translateY(48px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 640px) {
+  .yrk-sheet { align-items: end !important; padding: 0 !important; }
+  .yrk-sheet > * {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: 92dvh !important;
+    border-radius: 24px 24px 0 0 !important;
+    animation: yrk-sheet-up 0.24s ease-out !important;
+  }
+}
+
+/* safe-area helpers */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* sticky bars clear the home indicator */
+.sticky-safe { bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important; }
+
+/* no sideways scroll anywhere */
+html, body { overflow-x: clip; }
+
 /* Grid children must be allowed to shrink or long stems blow out the layout */
 .grid > * { min-width: 0; }
 

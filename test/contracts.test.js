@@ -271,4 +271,23 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     const bank = read("src/app/bank/page.tsx");
     assert.ok(bank.includes("ImportModal"), "import entry wired");
   });
+
+  it("mobile-first shell: tabs, sheets, safe areas, targets", () => {
+    assert.ok(fs.existsSync(path.join(root, "src/components/mobile-nav.tsx")), "bottom tabs present");
+    const nav = read("src/components/mobile-nav.tsx");
+    for (const href of ["/bank", "/play", "/archive", "/profile"]) {
+      assert.ok(nav.includes(href), `tab missing ${href}`);
+    }
+    const layout = read("src/app/layout.tsx");
+    assert.ok(layout.includes("MobileNav"), "tabs mounted");
+    assert.ok(layout.includes("viewportFit") || layout.includes("viewport"), "viewport configured");
+    assert.ok(layout.includes("pb-28"), "tab clearance present");
+    const css = read("src/app/globals.css");
+    assert.ok(css.includes(".yrk-sheet"), "sheet system present");
+    assert.ok(css.includes("safe-area-inset-bottom"), "safe areas present");
+    const btn = read("src/components/ui/button.tsx");
+    assert.ok(btn.includes("h-10") && btn.includes("sm:h-8"), "mobile-first button sizing present");
+    const grid = read("src/components/drive-grid.tsx");
+    assert.ok(grid.includes("min-h-[44px]"), "44px rows present");
+  });
 });

@@ -113,7 +113,7 @@ export function ContentExplorer({ open, exclude, onAdd, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-3 sm:p-6" onClick={onClose}>
+    <div className="yrk-sheet fixed inset-0 z-50 grid place-items-center bg-slate-900/50 p-3 sm:p-6" onClick={onClose}>
       <div className="flex max-h-[85dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-5 py-3.5">
           <div className="text-sm font-bold">Link content</div>

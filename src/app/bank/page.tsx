@@ -489,7 +489,7 @@ export default function BankPage() {
 
       {/* new question modal */}
       {showNewQ && (
-        <div className="fixed inset-0 z-40 overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={() => setShowNewQ(false)}>
+        <div className="yrk-sheet fixed inset-0 z-40 overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={() => setShowNewQ(false)}>
           <div className="mx-auto max-w-4xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between text-white">
               <span className="text-sm font-semibold">New question in “{crumbs[crumbs.length - 1]?.name}”</span>
@@ -507,7 +507,7 @@ export default function BankPage() {
 
       {/* edit from viewer */}
       {viewId && viewQ && editing && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={() => setEditing(false)}>
+        <div className="yrk-sheet fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-3 sm:p-6" onClick={() => setEditing(false)}>
           <div className="mx-auto max-w-4xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between text-white">
               <span className="text-sm font-semibold">Edit question</span>
@@ -551,7 +551,7 @@ export default function BankPage() {
 
       {/* share modal (scoped to a folder, or the viewed root) */}
       {showShare && (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={() => setShowShare(false)}>
+        <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={() => setShowShare(false)}>
           <div className="grid max-h-[90dvh] w-full max-w-md gap-3 overflow-y-auto rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between gap-2">
               <div className="truncate text-sm font-bold">Share {shareScope ? `“${[...folders, ...tree].find((f) => f.id === shareScope)?.name ?? "folder"}”` : "bank root"}</div>
@@ -618,7 +618,7 @@ export default function BankPage() {
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
+    <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
       <div className="grid w-full max-w-sm gap-3 rounded-3xl bg-white p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-2">
           <div className="truncate text-sm font-bold">{title}</div>

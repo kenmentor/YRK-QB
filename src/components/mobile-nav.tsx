@@ -20,7 +20,7 @@ export function MobileNav() {
   }, [path]);
 
   return (
-    <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/92 backdrop-blur-md md:hidden">
+    <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-slate-200/80 bg-white/92 backdrop-blur-md md:hidden">
       <div className="grid grid-cols-4 px-2 pt-1.5">
         {TABS.map((t) => {
           const href = t.href === "/profile" && me === false ? "/login" : t.href;

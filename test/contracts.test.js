@@ -297,6 +297,9 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     assert.ok(bank.includes("showTree"), "folders drawer present");
     assert.ok(bank.includes("BankNav"), "shared nav pane present");
     assert.ok(bank.includes("PanelLeft"), "drawer trigger present");
+    assert.ok(bank.includes("RibbonIcon"), "icon-led actions present");
+    assert.ok(bank.includes("setMoreOpen") || bank.includes("moreOpen"), "more menu present");
+    assert.ok(bank.includes("setLoading(false)"), "loading skeleton present");
     const ex = read("src/components/content-explorer.tsx");
     assert.ok(ex.includes("sm:h-6 sm:w-6"), "explorer touch checkboxes present");
   });

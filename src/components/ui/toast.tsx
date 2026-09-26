@@ -29,7 +29,7 @@ export function Toaster() {
     window.addEventListener("yrk-toast", handler);
     return () => window.removeEventListener("yrk-toast", handler);
   }, []);
-  return <div id="yrk-toaster" className="pointer-events-none fixed bottom-4 left-4 right-4 z-[100] grid gap-2 sm:left-auto sm:right-5 sm:w-96" />;
+  return <div id="yrk-toaster" className="pointer-events-none fixed bottom-24 left-4 right-4 z-[100] grid gap-2 sm:left-auto sm:right-5 sm:w-96 sm:bottom-5" />;
 }
 
 export { CheckCircle2 };

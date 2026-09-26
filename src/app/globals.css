@@ -52,8 +52,11 @@ body {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 .pt-safe { padding-top: env(safe-area-inset-top); }
 
-/* sticky bars clear the home indicator */
+/* sticky bars clear the home indicator AND the tab bar on phones */
 .sticky-safe { bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important; }
+@media (max-width: 767px) {
+  .sticky-safe { bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
+}
 
 /* no sideways scroll anywhere */
 html, body { overflow-x: clip; }

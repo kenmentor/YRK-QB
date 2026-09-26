@@ -12,7 +12,7 @@ import { downloadFolderZip, downloadQuestionFile } from "@/lib/transport";
 import { apiGet, apiSend } from "@/lib/api";
 import { QuestionView } from "@/components/question-view";
 import { QuestionEditor, QForm } from "@/components/question-editor";
-import { Search, FolderPlus, FilePlus, ChevronRight, BookOpen, ArrowRight, ArrowLeft, ArrowUp, RefreshCw, Database, LayoutGrid, List, Share2, X, UserPlus, LogOut, Users, Upload, PanelLeft } from "lucide-react";
+import { Search, FolderPlus, FilePlus, ChevronRight, BookOpen, ArrowRight, ArrowLeft, ArrowUp, RefreshCw, Database, LayoutGrid, List, Share2, X, UserPlus, LogOut, Users, Upload, PanelLeft, MoreVertical } from "lucide-react";
 
 interface TreeFolder { id: string; name: string; parentId?: string | null; ownerId?: string | null; shared?: boolean; ownerName?: string; access?: string; }
 interface Crumb { id: string | null; name: string; ownerId: string; }
@@ -39,6 +39,7 @@ export default function BankPage() {
   const [ownerName, setOwnerName] = useState("");
   const [q, setQ] = useState("");
   const [me, setMe] = useState<{ id: string } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // modals
   const [showNewFolder, setShowNewFolder] = useState(false);
@@ -54,6 +55,7 @@ export default function BankPage() {
   const [moveDest, setMoveDest] = useState<string>("");
   const [view, setView] = useState<DriveView>("details");
   const [dropCrumb, setDropCrumb] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [importScope, setImportScope] = useState<{ parentId: string | null; name: string } | null>(null);
   const [showShare, setShowShare] = useState(false);
   const [showTree, setShowTree] = useState(false);
@@ -95,6 +97,7 @@ export default function BankPage() {
     apiGet<{ folders: DriveFolderItem[]; questions: DriveFile[]; breadcrumbs: Crumb[]; access: string; owner: { name: string }; sharedEntries: typeof sharedEntries }>(
       `/api/drive/contents${params.toString() ? `?${params.toString()}` : ""}`
     ).then((r) => {
+      setLoading(false);
       if (!r.ok) {
         if (r.status === 401) { setFolders([]); setFiles([]); return; }
         if (r.status) toast(r.error);
@@ -420,31 +423,73 @@ export default function BankPage() {
                 <Input className="w-44 pl-9" placeholder={`Search ${crumbs[crumbs.length - 1]?.name ?? ""}`} value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
             </CardContent></Card>
-            {/* ribbon: actions */}
+            {/* ribbon: icon-led actions, fits 360px with zero scroll */}
             <div className="grid gap-2 rounded-b-xl border border-t-0 border-slate-200 bg-white px-2.5 py-2.5 shadow-soft">
               <div className="relative sm:hidden">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <Input className="w-full pl-9" placeholder={`Search ${crumbs[crumbs.length - 1]?.name ?? ""}`} value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
-              <div className="flex items-center gap-1.5 overflow-x-auto">
-                <Button size="sm" variant="outline" className="shrink-0 lg:hidden" onClick={() => setShowTree(true)}><PanelLeft className="h-3.5 w-3.5" /> Folders</Button>
-                {canCreate && !(sharedMode && !folderId) && <Button size="sm" variant="accent" className="shrink-0" onClick={() => setShowNewQ(true)}><FilePlus className="h-3.5 w-3.5" /> New</Button>}
-                {canCreate && <Button size="sm" variant="outline" className="shrink-0" onClick={() => setShowNewFolder(true)}><FolderPlus className="h-3.5 w-3.5" /> New folder</Button>}
+              <div className="flex items-center gap-1.5">
+                <RibbonIcon title="Folders" onClick={() => setShowTree(true)} className="lg:hidden">
+                  <PanelLeft className="h-5 w-5" />
+                </RibbonIcon>
                 {canCreate && !(sharedMode && !folderId) && (
-                  <Button size="sm" variant="outline" className="shrink-0" onClick={() => setImportScope({ parentId: folderId, name: crumbs[crumbs.length - 1]?.name ?? "My Bank" })}>
-                    <Upload className="h-3.5 w-3.5" /> Import
-                  </Button>
+                  <RibbonIcon title="New question" primary onClick={() => setShowNewQ(true)}>
+                    <FilePlus className="h-5 w-5" />
+                  </RibbonIcon>
                 )}
-                {access === "owner" && <Button size="sm" variant="outline" className="shrink-0" onClick={() => openShare()}><Share2 className="h-3.5 w-3.5" /> Share</Button>}
+                {canCreate && (
+                  <RibbonIcon title="New folder" onClick={() => setShowNewFolder(true)}>
+                    <FolderPlus className="h-5 w-5" />
+                  </RibbonIcon>
+                )}
+                <span className="min-w-0 flex-1 truncate text-xs text-slate-400">
+                  {crumbs.length > 1 ? `${folders.length + files.length} items` : ""}
+                </span>
                 {/* view switcher */}
-                <div className="ml-auto flex shrink-0 rounded-lg border border-slate-200 p-0.5">
+                <div className="flex shrink-0 rounded-lg border border-slate-200 p-0.5">
                   <button title="Details view" onClick={() => setViewAndSave("details")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "details" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><List className="h-4 w-4" /></button>
                   <button title="Tiles view" onClick={() => setViewAndSave("tiles")} className={`rounded-md p-2 transition sm:p-1.5 ${view === "tiles" ? "bg-slate-900 text-white" : "text-slate-400 hover:text-slate-600"}`}><LayoutGrid className="h-4 w-4" /></button>
+                </div>
+                <div className="relative shrink-0">
+                  <RibbonIcon title="More actions" onClick={() => setMoreOpen((v) => !v)}>
+                    <MoreVertical className="h-5 w-5" />
+                  </RibbonIcon>
+                  {moreOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setMoreOpen(false)} />
+                      <div className="absolute right-0 top-11 z-20 grid w-44 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lift">
+                        {canCreate && !(sharedMode && !folderId) && (
+                          <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50" onClick={() => { setMoreOpen(false); setImportScope({ parentId: folderId, name: crumbs[crumbs.length - 1]?.name ?? "My Bank" }); }}>
+                            <Upload className="h-4 w-4 text-slate-400" /> Import files
+                          </button>
+                        )}
+                        {access === "owner" && (
+                          <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50" onClick={() => { setMoreOpen(false); openShare(); }}>
+                            <Share2 className="h-4 w-4 text-slate-400" /> Share this {folderId ? "folder" : "bank"}
+                          </button>
+                        )}
+                        <button className="flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] hover:bg-slate-50" onClick={() => { setMoreOpen(false); loadTree(); loadContents(folderId, ownerId); }}>
+                          <RefreshCw className="h-4 w-4 text-slate-400" /> Refresh
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="mt-3">
+            {loading ? (
+              <div className="grid gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-3 shadow-soft">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="h-[18px] w-[18px] shrink-0 animate-pulse rounded-md bg-slate-100" />
+                    <span className="h-4 flex-1 animate-pulse rounded-md bg-slate-100" style={{ width: `${82 - i * 9}%` }} />
+                  </div>
+                ))}
+              </div>
+            ) : (
             <DriveGrid
               folders={gridFolders}
               files={visibleFiles}
@@ -457,6 +502,7 @@ export default function BankPage() {
               onAction={gridAction}
               onMove={moveItem}
             />
+            )}
             </div>
           </div>
         </div>
@@ -656,6 +702,18 @@ function BankNav({ myTree, incoming, folderId, ownerId, sharedMode, meId, canCre
       )}
       {canCreate && !sharedMode && <Button size="sm" variant="outline" className="w-full" onClick={onNewFolder}><FolderPlus className="h-3.5 w-3.5" /> New folder</Button>}
     </div>
+  );
+}
+
+// Icon-led ribbon button: 44px touch target, tooltip label, no text clutter.
+function RibbonIcon({ title, onClick, primary, className, children }: {
+  title: string; onClick: () => void; primary?: boolean; className?: string; children: React.ReactNode;
+}) {
+  return (
+    <button title={title} aria-label={title} onClick={onClick}
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition active:scale-95 ${primary ? "border-indigo-600 bg-indigo-600 text-white shadow-sm hover:bg-indigo-500" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"} ${className ?? ""}`}>
+      {children}
+    </button>
   );
 }
 

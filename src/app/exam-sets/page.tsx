@@ -27,10 +27,10 @@ export default function ExamSetsPage() {
   useEffect(load, []);
 
   async function create() {
-    if (!f.title.trim()) { toast("Exam title required."); return; }
+    if (!f.title.trim()) { toast("Exam title required.", "err"); return; }
     const res = await fetch("/api/exam-sets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) });
     const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    if (!res.ok) { toast(d.error, "err"); return; }
     toast("Exam set created, add questions next.");
     window.location.href = `/exam-sets/${d.id}`;
   }
@@ -38,7 +38,7 @@ export default function ExamSetsPage() {
   async function remove(id: string, title: string) {
     if (!confirm(`Delete "${title}"? Questions stay in the bank.`)) return;
     const res = await fetch(`/api/exam-sets/${id}`, { method: "DELETE" });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    if (!res.ok) { toast((await res.json()).error, "err"); return; }
     toast("Exam set deleted.");
     load();
   }

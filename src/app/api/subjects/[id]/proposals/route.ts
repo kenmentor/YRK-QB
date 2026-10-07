@@ -34,6 +34,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       questionId: body.questionId ?? null,
       payload: JSON.stringify({
         type: p.type ?? "mcq", stem: p.stem, options: p.options ?? [], correct: p.correct ?? [],
+        optionMarks: p.optionMarks ?? [],
         parts: p.parts ?? [], explanation: p.explanation, difficulty: p.difficulty ?? "medium",
         difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "",
         tags: p.tags ?? [], mediaUrl: p.mediaUrl ?? "",

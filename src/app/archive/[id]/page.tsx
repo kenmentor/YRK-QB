@@ -62,7 +62,7 @@ export default function ActivityPage({ params }: { params: { id: string } }) {
   const rules = mode === "exam" ? meta.rulesTest : meta.rulesPractice;
 
   function start() {
-    if (!accepted) { toast("Read and accept the rules first."); return; }
+    if (!accepted) { toast("Read and accept the rules first.", "err"); return; }
     if (!meta) return;
     if (!me) { window.location.href = `/login?next=${encodeURIComponent(`/archive/${meta.id}`)}`; return; }
     window.location.href = `/play?activity=${meta.id}&mode=${mode}`;

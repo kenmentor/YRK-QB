@@ -28,22 +28,22 @@ export default function BankDetail({ params }: { params: { id: string } }) {
     const res = await fetch(`/api/bank/${params.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ allowApplications: !data?.question.allowApplications }) });
     const d = await res.json();
     setBusy(false);
-    if (!res.ok) toast(d.error);
+    if (!res.ok) toast(d.error, "err");
     else { toast(d.allowApplications ? "Made appliable, others can now apply to edit." : "Closed, no new applications."); load(); }
   }
 
   async function apply() {
-    if (!applyMsg.trim()) { toast("Tell the creator why you’d be a good editor."); return; }
+    if (!applyMsg.trim()) { toast("Tell the creator why you’d be a good editor.", "err"); return; }
     const res = await fetch(`/api/questions/${params.id}/applications`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: applyMsg }) });
     const d = await res.json();
-    if (!res.ok) toast(d.error);
+    if (!res.ok) toast(d.error, "err");
     else { toast("Application sent, the creator will approve or decline."); setApplyMsg(""); load(); }
   }
 
   async function decide(id: string, decision: string) {
     const res = await fetch(`/api/applications/${id}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision }) });
     const d = await res.json();
-    if (!res.ok) toast(d.error);
+    if (!res.ok) toast(d.error, "err");
     else { toast(decision === "approved" ? "Approved, editor added to this question." : "Declined gracefully."); load(); }
   }
 

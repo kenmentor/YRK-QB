@@ -22,7 +22,7 @@ export async function apiGet<T>(url: string): Promise<ApiResult<T>> {
     return { ok: true, status: r.status, data, error: "" };
   } catch {
     const error = friendly(0, "");
-    toast(error);
+    toast(error, "err");
     return { ok: false, status: 0, data: null, error };
   }
 }
@@ -39,7 +39,7 @@ export async function apiSend<T>(url: string, method: string, body?: unknown): P
     return { ok: true, status: r.status, data, error: "" };
   } catch {
     const error = friendly(0, "");
-    toast(error);
+    toast(error, "err");
     return { ok: false, status: 0, data: null, error };
   }
 }

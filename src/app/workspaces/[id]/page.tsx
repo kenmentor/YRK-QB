@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { QuestionEditor, type QForm } from "@/components/question-editor";
 
-interface Draft { id: string; stem: string; status: string; type: string; options: string; correct: string; explanation: string; difficulty: string; authorId: string; topicId?: string; conflictBranch?: boolean; parts?: string; difficultyIndex?: number; category?: string; sector?: string; tags?: string; mediaUrl?: string; stemId?: string; inheritOptions?: boolean; marks?: number | null; }
+interface Draft { id: string; stem: string; status: string; type: string; options: string; correct: string; explanation: string; difficulty: string; authorId: string; topicId?: string; conflictBranch?: boolean; parts?: string; optionMarks?: string; difficultyIndex?: number; category?: string; sector?: string; tags?: string; mediaUrl?: string; stemId?: string; inheritOptions?: boolean; marks?: number | null; }
 interface Ws {
   id: string; name: string; focus: string; subjectId?: string;
   destination?: { topic?: string; subject?: string; course?: string; session?: string };
@@ -58,8 +58,8 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
   }
 
   async function addDraft(f: QForm) {
-    const res = await fetch("/api/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspaceId: params.id, type: f.type, stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, stemId: f.stemId, inheritOptions: f.inheritOptions, marks: f.marks, topicId: f.topicId || undefined }) });
-    if (!res.ok) { const d = await res.json(); toast(`Could not save: ${d.error}`); return; }
+    const res = await fetch("/api/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ workspaceId: params.id, type: f.type, stem: f.stem, options: f.options, correct: f.correct, optionMarks: f.optionMarks, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, stemId: f.stemId, inheritOptions: f.inheritOptions, marks: f.marks, topicId: f.topicId || undefined }) });
+    if (!res.ok) { const d = await res.json(); toast(`Could not save: ${d.error}`, "err"); return; }
     const tName = topics.find((t) => t.id === f.topicId)?.name;
     toast(tName ? `Draft saved under ${tName}, send for review when ready.` : "Draft saved, send for review when ready. The bank owner publishes after approval.");
     load();
@@ -73,20 +73,20 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
       const r = await fetch(`/api/drafts/${d.id}`);
       if (r.ok) { const full = await r.json(); baseVersionId = full.versions?.[0]?.id; }
     }
-    const res = await fetch(`/api/drafts/${d.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: f.type, stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, stemId: f.stemId, inheritOptions: f.inheritOptions, marks: f.marks, topicId: f.topicId || undefined, note: "edit", baseVersionId }) });
+    const res = await fetch(`/api/drafts/${d.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: f.type, stem: f.stem, options: f.options, correct: f.correct, optionMarks: f.optionMarks, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, stemId: f.stemId, inheritOptions: f.inheritOptions, marks: f.marks, topicId: f.topicId || undefined, note: "edit", baseVersionId }) });
     const data = await res.json();
-    if (!res.ok) toast(`Cannot edit: ${data.error}`);
-    else { toast(data.conflict ? "Saved with conflict, reviewer will resolve in versions." : "Edit saved as new version."); load(); loadDetail(d.id); }
+    if (!res.ok) toast(`Cannot edit: ${data.error}`, "err");
+    else { toast(data.conflict ? "Saved with conflict, reviewer will resolve in versions." : "Edit saved as new version.", data.conflict ? "info" : "ok"); load(); loadDetail(d.id); }
   }
 
   async function review(id: string, action: string, verdict?: string) {
     const comment = prompt(action === "request" ? "Note for reviewer?" : "Review comment?") ?? "";
     const res = await fetch(`/api/drafts/${id}/review`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, verdict, comment }) });
     const data = await res.json();
-    if (!res.ok) toast(`Review blocked: ${data.error}`);
+    if (!res.ok) toast(`Review blocked: ${data.error}`, "err");
     else if (action === "request") toast("Draft sent, will be reviewed and published by the bank owner.");
     else if (verdict === "approved") toast("Approved, ready to merge to the bank.");
-    else toast("Changes requested, back to draft for edits.");
+    else toast("Changes requested, back to draft for edits.", "info");
     load(); loadDetail(id);
   }
 
@@ -101,7 +101,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
   async function mergeOne(id: string) {
     const res = await fetch("/api/merges", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "approve_to_live", draftIds: [id] }) });
     const data = await res.json();
-    toast(res.ok ? (data.duplicateWarning ? `Published, possible duplicate: ${data.duplicateWarning}` : "Published to the bank.") : `Merge blocked: ${data.error}`);
+    toast(res.ok ? (data.duplicateWarning ? `Published, possible duplicate: ${data.duplicateWarning}` : "Published to the bank.") : `Merge blocked: ${data.error}`, res.ok ? (data.duplicateWarning ? "info" : "ok") : "err");
     load();
   }
 
@@ -109,14 +109,14 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     const ids = (ws?.drafts ?? []).map((d) => d.id);
     const res = await fetch("/api/merges", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "set_publish", draftIds: ids }) });
     const data = await res.json();
-    toast(res.ok ? `Set published: ${data.published.length} live, ${data.skipped.length} skipped (not approved).` : `Publish blocked: ${data.error}`);
+    toast(res.ok ? `Set published: ${data.published.length} live, ${data.skipped.length} skipped (not approved).` : `Publish blocked: ${data.error}`, res.ok ? "ok" : "err");
     load();
   }
 
   async function invite(email: string) {
     const res = await fetch(`/api/workspaces/${params.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role: inviteRole }) });
     const data = await res.json();
-    toast(res.ok ? `Invited ${email} as ${inviteRole}.` : `Invite blocked: ${data.error}`);
+    toast(res.ok ? `Invited ${email} as ${inviteRole}.` : `Invite blocked: ${data.error}`, res.ok ? "ok" : "err");
     if (res.ok) { setInviteQ(""); setSuggest([]); load(); }
   }
 
@@ -124,7 +124,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     if (!confirm(`Remove ${name} from this workspace?`)) return;
     const res = await fetch(`/api/workspaces/${params.id}/members`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "remove", userId }) });
     const data = await res.json();
-    toast(res.ok ? `Removed ${name}.` : data.error);
+    toast(res.ok ? `Removed ${name}.` : data.error, res.ok ? "ok" : "err");
     if (res.ok) load();
   }
 
@@ -132,7 +132,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     if (!confirm("Leave this workspace?")) return;
     const res = await fetch(`/api/workspaces/${params.id}/members`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "leave" }) });
     const data = await res.json();
-    if (!res.ok) toast(data.error);
+    if (!res.ok) toast(data.error, "err");
     else { toast("Left the workspace."); window.location.href = "/workspaces"; }
   }
 
@@ -141,7 +141,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     if (!confirm("Really delete? This can't be undone.")) return;
     const res = await fetch(`/api/workspaces/${params.id}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: true }) });
     const data = await res.json();
-    if (!res.ok) toast(data.error);
+    if (!res.ok) toast(data.error, "err");
     else { toast("Workspace deleted."); window.location.href = "/workspaces"; }
   }
 
@@ -149,7 +149,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     if (!confirm("Delete this draft and its history?")) return;
     const res = await fetch(`/api/drafts/${id}`, { method: "DELETE" });
     const data = await res.json();
-    toast(res.ok ? "Draft deleted." : data.error);
+    toast(res.ok ? "Draft deleted." : data.error, res.ok ? "ok" : "err");
     if (res.ok) load();
   }
 
@@ -161,6 +161,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     const res = await fetch("/api/drafts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       workspaceId: params.id, type: question.type, stem: question.stem,
       options: JSON.parse(question.options || "[]"), correct: JSON.parse(question.correct || "[]"),
+      optionMarks: (() => { try { const v = JSON.parse(question.optionMarks || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } })(),
       parts: (() => { try { return JSON.parse(question.parts || "[]"); } catch { return []; } })(),
       explanation: question.explanation, difficulty: question.difficulty,
       difficultyIndex: question.difficultyIndex ?? 3, category: question.category ?? "tertiary",
@@ -170,7 +171,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
       revisionOf: q.id
     }) });
     const data = await res.json();
-    toast(res.ok ? "Revision draft opened, edit it below, then review and merge." : `Cannot revise: ${data.error}`);
+    toast(res.ok ? "Revision draft opened, edit it below, then review and merge." : `Cannot revise: ${data.error}`, res.ok ? "ok" : "err");
     if (res.ok) { setShowBank(false); load(); }
   }
 
@@ -178,7 +179,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
     const message = decision === "decline" ? (prompt("Message to applicant? (optional)") ?? "") : "";
     const res = await fetch(`/api/join-requests/${id}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision, message }) });
     const data = await res.json();
-    toast(res.ok ? (decision === "approve" ? "Member added." : "Request declined.") : data.error);
+    toast(res.ok ? (decision === "approve" ? "Member added." : "Request declined.") : data.error, res.ok ? "ok" : "err");
     if (res.ok) load();
   }
 
@@ -309,7 +310,7 @@ export default function WorkspaceDetail({ params }: { params: { id: string } }) 
             {tab[d.id] === "edit" && canEdit && (
               <div className="mt-3">
                 <QuestionEditor key={d.id} topics={topics} submitLabel="Save as new version"
-                  initial={{ type: d.type as QForm["type"], stem: d.stem, options: JSON.parse(d.options || "[]"), correct: JSON.parse(d.correct || "[]"), parts: (() => { try { return JSON.parse(d.parts || "[]"); } catch { return []; } })(), explanation: d.explanation, difficulty: d.difficulty, difficultyIndex: d.difficultyIndex ?? 3, category: d.category ?? "tertiary", sector: d.sector ?? "", tags: (() => { try { return JSON.parse(d.tags || "[]"); } catch { return []; } })(), mediaUrl: d.mediaUrl ?? "", stemId: d.stemId ?? "", inheritOptions: !!d.inheritOptions, marks: d.marks ?? null, topicId: d.topicId ?? "" }}
+                  initial={{ type: d.type as QForm["type"], stem: d.stem, options: JSON.parse(d.options || "[]"), correct: JSON.parse(d.correct || "[]"), optionMarks: (() => { try { const v = JSON.parse(d.optionMarks || "[]"); return Array.isArray(v) ? v.map(Number) : []; } catch { return []; } })(), parts: (() => { try { return JSON.parse(d.parts || "[]"); } catch { return []; } })(), explanation: d.explanation, difficulty: d.difficulty, difficultyIndex: d.difficultyIndex ?? 3, category: d.category ?? "tertiary", sector: d.sector ?? "", tags: (() => { try { return JSON.parse(d.tags || "[]"); } catch { return []; } })(), mediaUrl: d.mediaUrl ?? "", stemId: d.stemId ?? "", inheritOptions: !!d.inheritOptions, marks: d.marks ?? null, topicId: d.topicId ?? "" }}
                   onSubmit={(f) => saveEdit(d, f)} />
               </div>
             )}

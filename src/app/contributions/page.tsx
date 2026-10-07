@@ -24,7 +24,7 @@ export default function CommitsPage() {
   function parsed(c: Commit) {
     try {
       return JSON.parse(c.payload) as {
-        type: string; stem: string; options: string[]; correct: string[];
+        type: string; stem: string; options: string[]; correct: string[]; optionMarks?: number[];
         parts?: { stem?: string; label?: string; max?: number }[];
         explanation: string; difficulty: string; difficultyIndex?: number;
         category?: string; sector?: string; tags?: string[]; mediaUrl?: string;
@@ -36,7 +36,7 @@ export default function CommitsPage() {
   async function save(id: string, f: QForm) {
     const res = await fetch(`/api/proposals/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ payload: f, message: note }) });
     const d = await res.json();
-    if (!res.ok) toast(d.error);
+    if (!res.ok) toast(d.error, "err");
     else { toast("Commit updated."); setEditing(null); load(); }
   }
 
@@ -44,7 +44,7 @@ export default function CommitsPage() {
     if (!confirm("Withdraw this commit?")) return;
     const res = await fetch(`/api/proposals/${id}`, { method: "DELETE" });
     const d = await res.json();
-    toast(res.ok ? "Withdrawn." : d.error);
+    toast(res.ok ? "Withdrawn." : d.error, res.ok ? "ok" : "err");
     if (res.ok) load();
   }
 
@@ -71,7 +71,7 @@ export default function CommitsPage() {
                   return (<>
                     <Textarea placeholder="Note for the admin…" value={note} onChange={(e) => setNote(e.target.value)} />
                     <QuestionEditor key={c.id} topics={topics.filter((t) => t.subject === c.subjectName)} submitLabel="Save changes"
-                      initial={{ type: p.type as QForm["type"], stem: p.stem, options: p.options, correct: p.correct, parts: p.parts ?? [], explanation: p.explanation, difficulty: p.difficulty, difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "", tags: p.tags ?? [], mediaUrl: p.mediaUrl ?? "", stemId: p.stemId ?? "", inheritOptions: !!p.inheritOptions, marks: p.marks ?? null, topicId: p.topicId ?? "" }}
+                      initial={{ type: p.type as QForm["type"], stem: p.stem, options: p.options, correct: p.correct, optionMarks: p.optionMarks ?? [], parts: p.parts ?? [], explanation: p.explanation, difficulty: p.difficulty, difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "", tags: p.tags ?? [], mediaUrl: p.mediaUrl ?? "", stemId: p.stemId ?? "", inheritOptions: !!p.inheritOptions, marks: p.marks ?? null, topicId: p.topicId ?? "" }}
                       onSubmit={(f) => save(c.id, f)} />
                     <div className="flex gap-2"><Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
                     <Button variant="ghost" size="sm" className="text-red-600" onClick={() => withdraw(c.id)}>Withdraw</Button></div>

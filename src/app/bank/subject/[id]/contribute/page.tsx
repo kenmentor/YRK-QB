@@ -27,8 +27,8 @@ export default function ContributePage({ params }: { params: { id: string } }) {
   }, [params.id]);
 
   function onEditorSubmit(f: QForm) {
-    if (!accepted) { toast("Read and accept the terms first."); return; }
-    if (!f.topicId) { toast("Pick the topic this question belongs to."); return; }
+    if (!accepted) { toast("Read and accept the terms first.", "err"); return; }
+    if (!f.topicId) { toast("Pick the topic this question belongs to.", "err"); return; }
     setPending(f);
     setShowModal(true);
   }
@@ -40,7 +40,7 @@ export default function ContributePage({ params }: { params: { id: string } }) {
       body: JSON.stringify({ kind: "new_question", payload: pending, message: note, termsAccepted: true })
     });
     const d = await res.json();
-    if (!res.ok) { toast(d.error); setShowModal(false); return; }
+    if (!res.ok) { toast(d.error, "err"); setShowModal(false); return; }
     setShowModal(false);
     setPending(null);
     setNote("");

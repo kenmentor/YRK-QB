@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
-import { gradeAnswer, isRubricType, rubricTotal, rubricOk, suggestMarks } from "@/lib/lifecycle";
+import { gradeAnswer, isRubricType, rubricTotal, rubricOk, suggestMarks, gradeMarks } from "@/lib/lifecycle";
 import { parseParts, matchAny } from "@/lib/validation";
 import { isBankQuestion, safeArr } from "@/lib/shape";
 import { verifyTicket } from "@/lib/exam-token";
@@ -91,8 +91,8 @@ export async function POST(req: Request) {
   }
 
   const questions = (await db.question.findMany({ where: { id: { in: snapshotIds }, mergedIntoId: null } }) as unknown as {
-    id: string; stem: string; correct: string; type: string; explanation: string; parts?: string;
-    difficultyIndex?: number; marks?: number | null;
+    id: string; stem: string; options: string; correct: string; type: string; explanation: string; parts?: string;
+    difficultyIndex?: number; marks?: number | null; optionMarks?: string;
   }[]);
   const byId = new Map(questions.map((q) => [q.id, q]));
   let score = 0;
@@ -127,8 +127,18 @@ export async function POST(req: Request) {
 
     const correct = gradeAnswer(correctArr, given, q.type);
     const max = maxFor(q, correctArr, parts);
+    // Option weights (partial credit) where the author set them.
+    let earned: number;
+    if (["mcq", "multi_select", "true_false", "sct"].includes(q.type)) {
+      const weights = safeArr((q as { optionMarks?: unknown }).optionMarks).map((v) => Number(v) || 0);
+      const wm = gradeMarks({ type: q.type, options: safeArr((q as { options?: unknown }).options), correct: correctArr, given, optionMarks: weights, max });
+      earned = late ? 0 : wm;
+    } else {
+      earned = late ? 0 : correct ? max : 0;
+    }
     marksTotal += max;
-    if (correct && !late) { score++; marksEarned += max; }
+    if (correct && !late) score++;
+    if (earned) marksEarned += earned;
     rows.push({ questionId: q.id, given: JSON.stringify(given), correct: late ? false : correct });
 
     // Per-part detail for compound formats.
@@ -143,7 +153,7 @@ export async function POST(req: Request) {
         return { stem: p.stem ?? `Part ${i + 1}`, given: [g || "(blank)"], expected: [display], ok: okPart };
       });
     }
-    breakdown.push({ questionId: q.id, stem: q.stem, given, correctAnswers: correctArr, explanation: q.explanation, ok: late ? false : correct, type: q.type, max, earned: late ? 0 : correct ? max : 0, ...(partRows ? { parts: partRows } : {}) });
+    breakdown.push({ questionId: q.id, stem: q.stem, given, correctAnswers: correctArr, explanation: q.explanation, ok: late ? false : correct, type: q.type, max, earned, ...(partRows ? { parts: partRows } : {}) });
   }
 
   const attempt = (await db.quizAttempt.create({

@@ -60,7 +60,7 @@ export function SiteHeader() {
     // Last-resort net: a dropped server must toast, never crash the page.
     const rej = (e: PromiseRejectionEvent) => {
       e.preventDefault();
-      toast("Something didn't load — check your connection and retry.");
+      toast("Something didn't load — check your connection and retry.", "err");
     };
     window.addEventListener("unhandledrejection", rej);
     return () => { window.removeEventListener("keydown", close); window.removeEventListener("unhandledrejection", rej); };

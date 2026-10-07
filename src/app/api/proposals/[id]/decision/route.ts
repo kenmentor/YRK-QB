@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   if (decision === "commit") {
     const p = JSON.parse(proposal.payload) as {
-      type: string; stem: string; options: string[]; correct: string[]; parts?: { stem?: string; label?: string; max?: number }[];
+      type: string; stem: string; options: string[]; correct: string[]; optionMarks?: number[]; parts?: { stem?: string; label?: string; max?: number }[];
       explanation: string; difficulty: string; difficultyIndex?: number; category?: string; sector?: string;
       tags?: string[]; mediaUrl?: string; marks?: number | null; stemId?: string; inheritOptions?: boolean;
       topicId: string | null;
@@ -32,7 +32,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Same bar as the workspace flow: full schema validation, topic must
     // belong to the proposal's subject, no silent duplicates.
     const parsed = validateQuestion({
-      type: p.type, stem: p.stem, options: p.options ?? [], correct: p.correct ?? [], parts: p.parts ?? [],
+      type: p.type, stem: p.stem, options: p.options ?? [], correct: p.correct ?? [],
+      optionMarks: Array.isArray(p.optionMarks) ? p.optionMarks : [], parts: p.parts ?? [],
       explanation: p.explanation, difficulty: (p.difficulty ?? "medium") as "easy" | "medium" | "hard",
       difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "",
       mediaUrl: p.mediaUrl ?? "", tags: p.tags ?? [],
@@ -51,6 +52,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       data: {
         topicId: p.topicId, type: p.type, stem: p.stem, normStem: normalizeStem(p.stem),
         options: JSON.stringify(p.options ?? []), correct: JSON.stringify(p.correct ?? []),
+        optionMarks: JSON.stringify(parsed.data.optionMarks ?? []),
         parts: JSON.stringify(p.parts ?? []), explanation: p.explanation,
         difficulty: p.difficulty ?? "medium", difficultyIndex: p.difficultyIndex ?? 3,
         category: p.category ?? "tertiary", sector: p.sector ?? "", mediaUrl: p.mediaUrl ?? "",

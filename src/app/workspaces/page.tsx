@@ -24,10 +24,10 @@ export default function WorkspacesPage() {
   const subjects = courses.find((c) => c.id === form.courseId)?.subjects ?? [];
   const topics = subjects.find((s) => s.id === form.subjectId)?.topics ?? [];
   async function create() {
-    if (!form.name.trim()) { toast("Give the space a name first."); return; }
+    if (!form.name.trim()) { toast("Give the space a name first.", "err"); return; }
     const path = [form.sessionId && tree.find((s) => s.id === form.sessionId)?.name, form.courseId && courses.find((c) => c.id === form.courseId)?.name, form.subjectId && subjects.find((s) => s.id === form.subjectId)?.name, form.topicId && topics.find((t) => t.id === form.topicId)?.name].filter(Boolean).join(" › ");
     const res = await fetch("/api/workspaces", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, focus: form.focus, examId: form.courseId || undefined, subjectId: form.subjectId || undefined, topicId: form.topicId || undefined, visibility: form.visibility }) });
-    if (!res.ok) { toast("Login required to create a workspace."); return; }
+    if (!res.ok) { toast("Login required to create a workspace.", "err"); return; }
     toast(path ? `Workspace created for ${path}.` : "Workspace created, invite your crew.");
     setOpen(false); setForm({ name: "", focus: "", sessionId: "", courseId: "", subjectId: "", topicId: "", visibility: "invite-only" }); load();
   }
@@ -35,7 +35,7 @@ export default function WorkspacesPage() {
     const message = prompt(`Why do you want to join as ${role}? (message for the owner)`) ?? "";
     const res = await fetch(`/api/workspaces/${id}/join`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role, message }) });
     const d = await res.json();
-    toast(res.ok ? "Request sent, the owner decides. Watch notifications." : d.error);
+    toast(res.ok ? "Request sent, the owner decides. Watch notifications." : d.error, res.ok ? "ok" : "err");
   }
 
   const mine = items.filter((w) => w.myRole);

@@ -16,7 +16,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
   const draft = (await db.questionDraft.findUnique({ where: { id: params.id } }) as unknown as {
     id: string; workspaceId: string; authorId: string; type: string; stem: string; options: string; correct: string;
-    explanation: string; difficulty: string; tags: string; status: string; parts?: string;
+    explanation: string; difficulty: string; tags: string; status: string; parts?: string; optionMarks?: string;
     difficultyIndex?: number; category?: string; sector?: string; mediaUrl?: string;
     marks?: number | null; stemId?: string | null; inheritOptions?: boolean;
   } | null);
@@ -29,6 +29,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (!canEdit(role)) return NextResponse.json({ error: "Only editors/owners send drafts for review" }, { status: 403 });
     const parsed = validateQuestion({
       type: draft.type, stem: draft.stem, options: JSON.parse(draft.options), correct: JSON.parse(draft.correct),
+      optionMarks: (() => { try { const v = JSON.parse(draft.optionMarks ?? "[]"); return Array.isArray(v) ? v : []; } catch { return []; } })(),
       parts: (() => { try { return JSON.parse(draft.parts ?? "[]"); } catch { return []; } })(),
       explanation: draft.explanation, difficulty: draft.difficulty as "easy" | "medium" | "hard",
       difficultyIndex: draft.difficultyIndex ?? 3, category: draft.category ?? "tertiary",

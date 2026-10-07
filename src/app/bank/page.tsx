@@ -101,7 +101,7 @@ export default function BankPage() {
       setLoading(false);
       if (!r.ok) {
         if (r.status === 401) { setFolders([]); setFiles([]); return; }
-        if (r.status) toast(r.error);
+        if (r.status) toast(r.error, "err");
         return;
       }
       const d = r.data!;
@@ -174,7 +174,7 @@ export default function BankPage() {
   }
 
   async function createFolder() {
-    if (!newFolderName.trim()) { toast("Give the folder a name."); return; }
+    if (!newFolderName.trim()) { toast("Give the folder a name.", "err"); return; }
     const r = await apiSend<{ name: string }>("/api/drive/folders", "POST", { name: newFolderName, parentId: folderId, ownerId: ownerId ?? undefined });
     if (!r.ok) { if (r.status) toast(r.error); return; }
     toast(`Folder “${r.data?.name}” created.`);
@@ -183,7 +183,7 @@ export default function BankPage() {
   }
 
   async function createQuestion(f: QForm) {
-    if (sharedMode && !folderId) { toast("Open or create a folder first — files live in folders here."); return; }
+    if (sharedMode && !folderId) { toast("Open or create a folder first — files live in folders here.", "err"); return; }
     const r = await apiSend("/api/drive/questions", "POST", { ...f, folderId });
     if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Question filed in this folder.");
@@ -202,7 +202,7 @@ export default function BankPage() {
 
   async function saveEdit(f: QForm) {
     if (!viewId) return;
-    const r = await apiSend<unknown>(`/api/bank/${viewId}`, "PATCH", { stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, stemId: f.stemId, inheritOptions: f.inheritOptions, marks: f.marks });
+    const r = await apiSend<unknown>(`/api/bank/${viewId}`, "PATCH", { stem: f.stem, options: f.options, correct: f.correct, optionMarks: f.optionMarks, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, stemId: f.stemId, inheritOptions: f.inheritOptions, marks: f.marks });
     if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Question updated.");
     setEditing(false); setViewQ(r.data);
@@ -236,11 +236,11 @@ export default function BankPage() {
   }
 
   async function moveItem(kind: "file" | "folder", id: string, dest: string | null) {
-    if (dest?.startsWith("bank:")) { toast("Open that bank first, then drop into a folder."); return; }
+    if (dest?.startsWith("bank:")) { toast("Open that bank first, then drop into a folder.", "err"); return; }
     const url = kind === "file" ? `/api/bank/${id}` : `/api/drive/folders/${id}`;
     const body = kind === "file" ? { folderId: dest } : { parentId: dest };
     const r = await apiSend(url, "PATCH", body);
-    if (!r.ok) { if (r.status) toast(r.error || "Move failed"); return; }
+    if (!r.ok) { if (r.status) toast(r.error || "Move failed", "err"); return; }
     toast(kind === "file" ? "Question moved." : "Folder moved.");
     loadTree(); loadContents(folderId, ownerId);
   }
@@ -271,20 +271,20 @@ export default function BankPage() {
   }
 
   async function doDownloadFolder(id: string) {
-    toast("Preparing download…");
+    toast("Preparing download…", "info");
     const r = await apiGet<{ bundle: Parameters<typeof downloadFolderZip>[0]; truncated?: boolean }>(`/api/drive/export?folderId=${id}`);
-    if (!r.ok) { if (r.status) toast(r.error || "Export failed"); return; }
-    if (!r.data?.bundle) { toast("Export failed"); return; }
+    if (!r.ok) { if (r.status) toast(r.error || "Export failed", "err"); return; }
+    if (!r.data?.bundle) { toast("Export failed", "err"); return; }
     try {
       await downloadFolderZip(r.data.bundle);
       toast("Real folder downloaded.");
-    } catch { toast("Couldn't build the zip."); }
-    if (r.data.truncated) toast("Large folder — export capped at 500 questions.");
+    } catch { toast("Couldn't build the zip.", "err"); }
+    if (r.data.truncated) toast("Large folder — export capped at 500 questions.", "info");
   }
 
   async function doCopyFolder(id: string) {
     const r = await apiSend<{ questions: number }>(`/api/drive/folders/${id}/copy`, "POST", {});
-    if (!r.ok) { if (r.status) toast(r.error || "Copy failed"); return; }
+    if (!r.ok) { if (r.status) toast(r.error || "Copy failed", "err"); return; }
     toast(`Copied — ${r.data?.questions ?? 0} questions.`);
     loadTree(); loadContents(folderId, ownerId);
   }
@@ -297,7 +297,7 @@ export default function BankPage() {
       return;
     }
     apiGet<{ question: Parameters<typeof downloadQuestionFile>[0] | null }>(`/api/bank/${id}`).then((r) => {
-      if (!r.ok || !r.data?.question) { if (!r.ok && r.status) toast(r.error); else if (!r.data?.question) toast("Couldn't load that file."); return; }
+      if (!r.ok || !r.data?.question) { if (!r.ok && r.status) toast(r.error, "err"); else if (!r.data?.question) toast("Couldn't load that file.", "err"); return; }
       downloadQuestionFile(r.data.question);
       toast("Question file downloaded.");
     });
@@ -344,7 +344,7 @@ export default function BankPage() {
   }
 
   async function invite() {
-    if (!shareEmail.trim()) { toast("Enter their email."); return; }
+    if (!shareEmail.trim()) { toast("Enter their email.", "err"); return; }
     const r = await apiSend(`/api/drive/shares`, "POST", { email: shareEmail, role: shareRole, folderId: shareScope });
     if (!r.ok) { if (r.status) toast(r.error); return; }
     toast(`Shared as ${shareRole}.`);
@@ -559,7 +559,7 @@ export default function BankPage() {
               <button onClick={() => setEditing(false)} className="rounded-lg bg-white/10 p-1.5 hover:bg-white/20"><X className="h-4 w-4" /></button>
             </div>
             <QuestionEditor
-              initial={{ type: viewQ.type, stem: viewQ.stem, options: JSON.parse(viewQ.options || "[]"), correct: JSON.parse(viewQ.correct || "[]"), parts: (() => { try { return JSON.parse(viewQ.parts || "[]"); } catch { return []; } })(), explanation: viewQ.explanation, difficulty: viewQ.difficulty, difficultyIndex: viewQ.difficultyIndex ?? 3, category: viewQ.category ?? "tertiary", sector: viewQ.sector ?? "", tags: (() => { try { return JSON.parse(viewQ.tags || "[]"); } catch { return []; } })(), mediaUrl: viewQ.mediaUrl ?? "", stemId: viewQ.stemId ?? "", inheritOptions: !!viewQ.inheritOptions, marks: viewQ.marks ?? null }}
+              initial={{ type: viewQ.type, stem: viewQ.stem, options: JSON.parse(viewQ.options || "[]"), correct: JSON.parse(viewQ.correct || "[]"), optionMarks: (() => { try { const v = JSON.parse(viewQ.optionMarks || "[]"); return Array.isArray(v) ? v.map(Number) : []; } catch { return []; } })(), parts: (() => { try { return JSON.parse(viewQ.parts || "[]"); } catch { return []; } })(), explanation: viewQ.explanation, difficulty: viewQ.difficulty, difficultyIndex: viewQ.difficultyIndex ?? 3, category: viewQ.category ?? "tertiary", sector: viewQ.sector ?? "", tags: (() => { try { return JSON.parse(viewQ.tags || "[]"); } catch { return []; } })(), mediaUrl: viewQ.mediaUrl ?? "", stemId: viewQ.stemId ?? "", inheritOptions: !!viewQ.inheritOptions, marks: viewQ.marks ?? null }}
               topics={topics}
               stems={levelStems}
               submitLabel="Save changes"
@@ -636,7 +636,7 @@ export default function BankPage() {
                   <button onClick={async () => {
                     const next = !(pub?.isPublic ?? false);
                     const res = await fetch(`/api/drive/folders/${shareScope}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isPublic: next }) });
-                    if (!res.ok) { toast((await res.json()).error); return; }
+                    if (!res.ok) { toast((await res.json()).error, "err"); return; }
                     setPub({ isPublic: next, publicAccess: pub?.publicAccess ?? "view" });
                     toast(next ? "Folder is public." : "Folder is private again.");
                   }} className={`relative h-6 w-11 shrink-0 rounded-full transition ${pub?.isPublic ? "bg-emerald-500" : "bg-slate-200 dark:bg-white/10"}`}>
@@ -647,7 +647,7 @@ export default function BankPage() {
                   <label className="yrk-label">Public access
                     <Select value={pub.publicAccess} onChange={async (e) => {
                       const res = await fetch(`/api/drive/folders/${shareScope}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ publicAccess: e.target.value }) });
-                      if (!res.ok) { toast((await res.json()).error); return; }
+                      if (!res.ok) { toast((await res.json()).error, "err"); return; }
                       setPub({ isPublic: true, publicAccess: e.target.value });
                       toast("Access updated.");
                     }}>
@@ -664,7 +664,7 @@ export default function BankPage() {
                   <span className="min-w-0 flex-1 truncate">{s.user?.name ?? s.userId}<span className="block truncate text-xs text-slate-400 dark:text-[var(--yrk-text-tertiary)]">{s.user?.email}</span></span>
                   <Select className="w-auto" value={s.role} onChange={async (e) => {
                     const res = await fetch("/api/drive/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: s.user?.email, role: e.target.value, folderId: shareScope }) });
-                    if (!res.ok) toast((await res.json()).error); else { toast("Role updated."); loadShares(); }
+                    if (!res.ok) toast((await res.json()).error, "err"); else { toast("Role updated."); loadShares(); }
                   }}>
                     <option value="viewer">Viewer</option><option value="reviewer">Reviewer</option><option value="editor">Editor</option>
                   </Select>

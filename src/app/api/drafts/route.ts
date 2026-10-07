@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       topicId: body.topicId ?? null, type: body.type ?? "mcq",
       stem: body.stem ?? "", options: JSON.stringify(body.options ?? []),
       correct: JSON.stringify(body.correct ?? []),
+      optionMarks: JSON.stringify(body.optionMarks ?? []),
       parts: typeof body.parts === "string" ? body.parts : JSON.stringify(body.parts ?? []),
       explanation: body.explanation ?? "",
       difficulty: body.difficulty ?? "medium",

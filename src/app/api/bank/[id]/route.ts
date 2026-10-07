@@ -33,7 +33,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const q = (await db.question.findUnique({ where: { id: params.id } }) as unknown as { creatorId?: string; editorIds?: string; folderId?: string | null } | null);
   if (!q) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const body = await req.json().catch(() => ({}));
-  const { allowApplications, folderId, stem, options, correct, explanation, difficulty, parts, difficultyIndex, marks, stemId, inheritOptions, category, sector, tags, mediaUrl } = body ?? {};
+  const { allowApplications, folderId, stem, options, correct, optionMarks, explanation, difficulty, parts, difficultyIndex, marks, stemId, inheritOptions, category, sector, tags, mediaUrl } = body ?? {};
   const me = (await db.user.findUnique({ where: { id: user.id } }) as unknown as { role: string });
   // Creators, approved editors, and admins. editorIds is granted by the
   // edit-application flow, so approving someone must actually empower them.
@@ -91,6 +91,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
   if (options !== undefined) data.options = JSON.stringify(options);
   if (correct !== undefined) data.correct = JSON.stringify(correct);
+  if (optionMarks !== undefined) data.optionMarks = JSON.stringify(optionMarks ?? []);
   if (parts !== undefined) data.parts = typeof parts === "string" ? parts : JSON.stringify(parts ?? []);
   if (marks !== undefined) data.marks = marks === null ? null : Math.min(1000, Math.max(0, Number(marks) || 0));
   if (stemId !== undefined) data.stemId = stemId ? String(stemId) : null;

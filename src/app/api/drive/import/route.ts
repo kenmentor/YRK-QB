@@ -12,7 +12,7 @@ function norm(s: string) {
 }
 
 interface ValidatedQ {
-  type: string; stem: string; options: string[]; correct: string[];
+  type: string; stem: string; options: string[]; correct: string[]; optionMarks: number[];
   parts: { stem?: string; label?: string; max?: number }[];
   explanation: string; difficultyIndex: number; category: string; sector: string;
   tags: string[]; mediaUrl: string; topicPath: unknown;
@@ -46,6 +46,7 @@ function checkQuestion(raw: unknown, path: string): { ok: ValidatedQ | null; err
   if (q.format !== "yrk-question/1") return { ok: null, error: `${path}: bad format tag (want yrk-question/1)` };
   const parsed = validateQuestion({
     type: q.type, stem: q.stem, options: q.options ?? [], correct: q.correct ?? [],
+    optionMarks: Array.isArray(q.optionMarks) ? q.optionMarks : [],
     parts: q.parts ?? [], explanation: q.explanation,
     difficultyIndex: Number(q.difficultyIndex) || 3,
     category: q.category ?? "tertiary", sector: q.sector ?? "",
@@ -57,7 +58,8 @@ function checkQuestion(raw: unknown, path: string): { ok: ValidatedQ | null; err
   return {
     ok: {
       type: parsed.data.type, stem: parsed.data.stem,
-      options: parsed.data.options, correct: parsed.data.correct, parts: parsed.data.parts,
+      options: parsed.data.options, correct: parsed.data.correct, optionMarks: parsed.data.optionMarks ?? [],
+      parts: parsed.data.parts,
       explanation: parsed.data.explanation, difficultyIndex: parsed.data.difficultyIndex,
       category: parsed.data.category, sector: parsed.data.sector,
       tags: parsed.data.tags, mediaUrl: parsed.data.mediaUrl,
@@ -150,6 +152,7 @@ export async function POST(req: Request) {
         data: {
           topicId: await resolveTopic(v.topicPath), type: v.type, stem: v.stem, normStem: norm(v.stem),
           options: JSON.stringify(v.options), correct: JSON.stringify(v.correct),
+          optionMarks: JSON.stringify(v.optionMarks ?? []),
           parts: JSON.stringify(v.parts), explanation: v.explanation,
           difficulty: bandFromIndex(v.difficultyIndex), difficultyIndex: v.difficultyIndex,
           category: v.category, sector: v.sector, mediaUrl: v.mediaUrl,
@@ -170,6 +173,7 @@ export async function POST(req: Request) {
         data: {
           topicId, type: v.type, stem: v.stem, normStem: norm(v.stem),
           options: JSON.stringify(v.options), correct: JSON.stringify(v.correct),
+          optionMarks: JSON.stringify(v.optionMarks ?? []),
           parts: JSON.stringify(v.parts), explanation: v.explanation,
           difficulty: bandFromIndex(v.difficultyIndex), difficultyIndex: v.difficultyIndex,
           category: v.category, sector: v.sector, mediaUrl: v.mediaUrl,

@@ -68,9 +68,9 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
 
   useEffect(() => {
     fetch(`/api/activities/${params.id}`).then(async (r) => {
-      if (!r.ok) { toast("Activity not found."); window.location.href = "/play"; return; }
+      if (!r.ok) { toast("Activity not found.", "err"); window.location.href = "/play"; return; }
       const d = await r.json();
-      if (d.meta.role !== "owner" && d.meta.role !== "editor") { toast("Not yours to build."); window.location.href = `/archive/${params.id}`; return; }
+      if (d.meta.role !== "owner" && d.meta.role !== "editor") { toast("Not yours to build.", "err"); window.location.href = `/archive/${params.id}`; return; }
       setMeta(d.meta);
       const items = (d.items ?? []) as Q[];
       const qc: Record<string, Q> = {};
@@ -107,8 +107,8 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
   // Publish is the only go-live: one PATCH with everything staged.
   async function publish() {
     if (!meta || publishing) return;
-    if (!meta.title.trim()) { toast("Give it a title first."); return; }
-    if (!assembly.length) { toast("Link something first."); return; }
+    if (!meta.title.trim()) { toast("Give it a title first.", "err"); return; }
+    if (!assembly.length) { toast("Link something first.", "err"); return; }
     setPublishing(true);
     const body: Record<string, unknown> = {
       title: meta.title, banner: meta.banner, details: meta.details,
@@ -125,7 +125,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
     const res = await fetch(`/api/activities/${params.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const d = await res.json().catch(() => ({}));
     setPublishing(false);
-    if (!res.ok) { toast(d.error ?? "Publish failed"); return; }
+    if (!res.ok) { toast(d.error ?? "Publish failed", "err"); return; }
     setDirty(false);
     toast("Published — live in archive and Play.");
   }
@@ -141,7 +141,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
   function addPicked(items: PickedRef[]) {
     const have = new Set(assembly.map((r) => `${r.kind}:${r.id}`));
     const fresh = items.filter((p) => !have.has(`${p.kind}:${p.id}`));
-    if (!fresh.length) { toast("Already linked."); return; }
+    if (!fresh.length) { toast("Already linked.", "info"); return; }
     setCache((c) => {
       const next = { ...c };
       for (const p of fresh) {
@@ -162,7 +162,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
   async function createInline(f: QForm) {
     const res = await fetch("/api/drive/questions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, folderId: null }) });
     const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    if (!res.ok) { toast(d.error, "err"); return; }
     setCache((c) => ({ ...c, [d.id]: { id: d.id, stem: d.stem, type: d.type, difficulty: d.difficulty } }));
     touchAssembly([...assembly, { kind: "q", id: d.id }]);
     setShowNewQ(false);
@@ -180,9 +180,9 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
   }
 
   async function invite() {
-    if (!email.trim()) { toast("Enter their email."); return; }
+    if (!email.trim()) { toast("Enter their email.", "err"); return; }
     const res = await fetch(`/api/activities/${params.id}/shares`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role }) });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    if (!res.ok) { toast((await res.json()).error, "err"); return; }
     toast(`Added as ${role}.`);
     setEmail("");
     fetch(`/api/activities/${params.id}/shares`).then((r) => (r.ok ? r.json() : [])).then(setShares);
@@ -190,7 +190,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
 
   async function unshare(shareId: string) {
     const res = await fetch(`/api/activities/${params.id}/shares?shareId=${shareId}`, { method: "DELETE" });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    if (!res.ok) { toast((await res.json()).error, "err"); return; }
     toast("Removed.");
     fetch(`/api/activities/${params.id}/shares`).then((r) => (r.ok ? r.json() : [])).then(setShares);
   }
@@ -198,7 +198,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
   async function removeActivity() {
     if (!confirm(`Delete “${meta?.title}”? Questions stay in the bank.`)) return;
     const res = await fetch(`/api/activities/${params.id}`, { method: "DELETE" });
-    if (!res.ok) { toast((await res.json()).error); return; }
+    if (!res.ok) { toast((await res.json()).error, "err"); return; }
     window.location.href = "/play";
   }
 
@@ -296,7 +296,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
                   const on = meta.modes.includes(m.v);
                   return <button key={m.v} onClick={() => {
                     const next = on ? meta.modes.filter((x) => x !== m.v) : [...meta.modes, m.v];
-                    if (!next.length) { toast("Keep at least one mode."); return; }
+                    if (!next.length) { toast("Keep at least one mode.", "err"); return; }
                     touchMeta({ modes: next });
                   }} className={cn("rounded-lg border px-2.5 py-1.5 text-[13px] font-semibold transition", on ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 dark:border-[var(--yrk-border-subtle)] text-slate-500 dark:text-[#9aa3b2]")}>{m.l}</button>;
                 })}

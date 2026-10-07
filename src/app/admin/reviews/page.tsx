@@ -22,7 +22,7 @@ export default function AdminReviews() {
   async function decideTaxonomy(id: string, decision: "approve" | "reject") {
     const res = await fetch(`/api/taxonomy/proposals/${id}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision }) });
     const d = await res.json();
-    toast(res.ok ? (d.note ?? `Taxonomy ${decision}d.`) : d.error);
+    toast(res.ok ? (d.note ?? `Taxonomy ${decision}d.`) : d.error, res.ok ? "ok" : "err");
     load();
   }
 
@@ -30,7 +30,7 @@ export default function AdminReviews() {
     const message = msg[id] ?? "";
     const res = await fetch(`/api/proposals/${id}/decision`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision, message }) });
     const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    if (!res.ok) { toast(d.error, "err"); return; }
     toast(decision === "commit" ? (message ? "Committed + message sent." : "Committed to the bank.") : (message ? "Cancelled + message sent." : "Cancelled with default note."));
     load();
   }

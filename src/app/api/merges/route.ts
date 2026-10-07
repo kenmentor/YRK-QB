@@ -6,12 +6,12 @@ import { normalizeStem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type DraftRow = { id: string; workspaceId: string; status: string; stem: string; topicId: string | null; type: string; options: string; correct: string; explanation: string; difficulty: string; tags: string; imageUrl: string | null; revisionOf?: string | null; parts?: string; difficultyIndex?: number; category?: string; sector?: string; mediaUrl?: string; marks?: number | null; stemId?: string | null; inheritOptions?: boolean };
+type DraftRow = { id: string; workspaceId: string; status: string; stem: string; topicId: string | null; type: string; options: string; correct: string; explanation: string; difficulty: string; tags: string; imageUrl: string | null; revisionOf?: string | null; parts?: string; optionMarks?: string; difficultyIndex?: number; category?: string; sector?: string; mediaUrl?: string; marks?: number | null; stemId?: string | null; inheritOptions?: boolean };
 
 function draftPayload(d: DraftRow) {
   return {
     topicId: d.topicId, type: d.type, stem: d.stem, normStem: normalizeStem(d.stem),
-    options: d.options, correct: d.correct, parts: d.parts ?? "[]", explanation: d.explanation,
+    options: d.options, correct: d.correct, optionMarks: d.optionMarks ?? "[]", parts: d.parts ?? "[]", explanation: d.explanation,
     difficulty: d.difficulty, difficultyIndex: d.difficultyIndex ?? 3,
     marks: d.marks ?? null, stemId: d.stemId ?? null, inheritOptions: !!d.inheritOptions,
     category: d.category ?? "tertiary", sector: d.sector ?? "", mediaUrl: d.mediaUrl ?? "",

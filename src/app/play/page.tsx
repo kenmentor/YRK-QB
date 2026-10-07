@@ -269,7 +269,7 @@ export default function QuizPage() {
     if (mode === "exam") {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error ?? "Could not start test"); return; }
-      if (data.skipped) toast(`${data.skipped} set question${data.skipped === 1 ? " is" : "s are"} no longer live, skipped.`);
+      if (data.skipped) toast(`${data.skipped} set question${data.skipped === 1 ? " is" : "s are"} no longer live, skipped.`, "info");
       setItems(data.items);
       setStems(parseStemList(data.stems));
       setTicket(data.ticket);
@@ -381,8 +381,8 @@ export default function QuizPage() {
     void auto;
     void startedAt;
     setResult({ score: data.score ?? 0, total: items.length, wrongIds, late: data.late, withheld: data.withheld, marksEarned: data.marksEarned, marksTotal: data.marksTotal, breakdown: bd.length ? bd : undefined });
-    if (data.withheld) toast("Submitted — the examiner releases scores on demand.");
-    if (data.late) toast("Submitted after time, scored zero. The clock is server-side.");
+    if (data.withheld) toast("Submitted — the examiner releases scores on demand.", "info");
+    if (data.late) toast("Submitted after time, scored zero. The clock is server-side.", "err");
     setPhase("results");
   }
 
@@ -568,11 +568,11 @@ export default function QuizPage() {
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="mx-auto grid w-full max-w-2xl gap-3">
         {(linkedStem || stemMissing) && (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-4 py-3 text-sm dark:border-[var(--yrk-border-default)]">
+          <div className="rounded-2xl border-2 border-brand-600/40 bg-brand-50 px-4 py-3.5 dark:border-brand-500/40 dark:bg-brand-500/10">
             {linkedStem ? (
-              <><span className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Shared stem</span><p className="mt-1 leading-relaxed">{linkedStem.stem}</p></>
+              <><span className="text-[11px] font-black uppercase tracking-[0.14em] text-brand-700 dark:text-brand-300">Read first · shared stem</span><p className="mt-1.5 text-[15px] font-bold leading-relaxed text-slate-900 dark:text-white">{linkedStem.stem}</p></>
             ) : (
-              <span className="text-[13px] text-slate-400">Linked stem unavailable — answering standalone.</span>
+              <span className="text-[13px] font-medium text-slate-500 dark:text-[#9aa3b2]">Linked stem unavailable — answering standalone.</span>
             )}
           </div>
         )}

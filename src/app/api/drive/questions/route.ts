@@ -14,10 +14,11 @@ export async function POST(req: Request) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
-  const { type, stem, options, correct, explanation, difficulty, difficultyIndex, marks, stemId, inheritOptions, category, sector, topicId, folderId, tags, parts, mediaUrl } = body ?? {};
+  const { type, stem, options, correct, optionMarks, explanation, difficulty, difficultyIndex, marks, stemId, inheritOptions, category, sector, topicId, folderId, tags, parts, mediaUrl } = body ?? {};
 
   const parsed = validateQuestion({
     type, stem, options: options ?? [], correct: correct ?? [],
+    optionMarks: Array.isArray(optionMarks) ? optionMarks.map((v: unknown) => Math.max(0, Number(v) || 0)) : [],
     parts: parts ?? [],
     explanation, difficulty: difficulty ?? "medium",
     difficultyIndex: Number(difficultyIndex) || 3,
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
       normStem: norm(parsed.data.stem),
       options: JSON.stringify(parsed.data.options),
       correct: JSON.stringify(parsed.data.correct),
+      optionMarks: JSON.stringify(parsed.data.optionMarks ?? []),
       parts: JSON.stringify(parsed.data.parts),
       explanation: parsed.data.explanation,
       difficulty: bandFromIndex(parsed.data.difficultyIndex),

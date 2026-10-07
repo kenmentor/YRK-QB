@@ -96,3 +96,52 @@ export function rubricOk(score: number, total: number): boolean {
   if (total <= 0) return false;
   return score >= total / 2;
 }
+
+// Per-option marks: fine / most-correct options earn partial credit, wrong
+// default to 0, fully-correct takes the max. Empty (or all-zero) weights =
+// legacy binary. Returns -1 for types that are not option-weighted (caller
+// falls back).
+export function gradeMarks(args: {
+  type: string;
+  options: string[];
+  correct: string[];
+  given: string[];
+  optionMarks?: number[];
+  max: number;
+}): number {
+  const { type, options, correct, given, optionMarks = [], max } = args;
+  const clamp = (v: number) => Math.min(max, Math.max(0, v));
+  const normEq = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const isCorrect = (v: string) => correct.some((c) => normEq(c, v));
+  const weightOf = (value: string): number | null => {
+    let i = options.indexOf(value);
+    if (i < 0) i = options.findIndex((o) => normEq(o, value));
+    if (i < 0 || i >= optionMarks.length) return null;
+    return optionMarks[i] ?? null;
+  };
+  // No positive weights anywhere = legacy binary grading (correct takes max).
+  const hasWeights = optionMarks.some((w) => (w || 0) > 0);
+  if (type === "mcq" || type === "true_false" || type === "sct") {
+    const g = (given[0] ?? "").trim();
+    if (!g) return 0;
+    if (!hasWeights) return isCorrect(g) ? max : 0;
+    const w = weightOf(given[0] ?? "");
+    if (w != null) return clamp(w);
+    return isCorrect(g) ? max : 0;
+  }
+  if (type === "multi_select") {
+    if (!hasWeights) {
+      // Legacy: exact set or nothing.
+      const normArr = (arr: string[]) => arr.map((s) => s.trim().toLowerCase()).sort().join("|");
+      return normArr(given) === normArr(correct) ? max : 0;
+    }
+    let sum = 0;
+    for (const gv of given) {
+      const w = weightOf(gv);
+      if (w != null) sum += w;
+      else if (correct.includes(gv)) sum += max;
+    }
+    return clamp(sum);
+  }
+  return -1;
+}

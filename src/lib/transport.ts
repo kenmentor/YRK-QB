@@ -7,6 +7,7 @@ export interface WireQuestion {
   stem: string;
   options: string[];
   correct: string[];
+  optionMarks?: number[];
   parts: { stem?: string; label?: string; max?: number }[];
   explanation: string;
   difficultyIndex: number;
@@ -42,7 +43,7 @@ export function downloadBlob(name: string, content: Blob | string, mime: string)
 }
 
 export function downloadQuestionFile(q: {
-  type: string; stem: string; options: string; correct: string; parts?: string;
+  type: string; stem: string; options: string; correct: string; optionMarks?: string; parts?: string;
   explanation: string; difficultyIndex?: number; difficulty: string;
   category?: string; sector?: string; tags?: string; mediaUrl?: string;
 }) {
@@ -55,6 +56,7 @@ export function downloadQuestionFile(q: {
     stem: q.stem,
     options: js(q.options),
     correct: js(q.correct),
+    optionMarks: js(q.optionMarks),
     parts: js(q.parts),
     explanation: q.explanation,
     difficultyIndex: q.difficultyIndex ?? 3,

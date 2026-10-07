@@ -24,7 +24,7 @@ export default function ExamSetBuilder({ params }: { params: { id: string } }) {
 
   function load() {
     fetch(`/api/exam-sets/${params.id}`).then(async (r) => {
-      if (!r.ok) { toast("Exam set not found."); window.location.href = "/exam-sets"; return; }
+      if (!r.ok) { toast("Exam set not found.", "err"); window.location.href = "/exam-sets"; return; }
       const d = await r.json();
       setSet(d.set);
       setQuestions((d.questions ?? []).filter((x: SetQuestion) => x.type !== "missing"));
@@ -62,7 +62,7 @@ export default function ExamSetBuilder({ params }: { params: { id: string } }) {
   async function save() {
     const res = await fetch(`/api/exam-sets/${params.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...set, questionIds: questions.map((x) => x.id) }) });
     const d = await res.json();
-    if (!res.ok) { toast(d.error); return; }
+    if (!res.ok) { toast(d.error, "err"); return; }
     setSet(d); setDirty(false);
     toast(`Saved — ${questions.length} questions in order.`);
   }
@@ -71,7 +71,7 @@ export default function ExamSetBuilder({ params }: { params: { id: string } }) {
     const next = { ...set, ...patch } as ExamSet;
     setSet(next);
     const res = await fetch(`/api/exam-sets/${params.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
-    if (!res.ok) toast((await res.json()).error);
+    if (!res.ok) toast((await res.json()).error, "err");
   }
 
   if (!set) return <div className="text-sm text-slate-500 dark:text-[#9aa3b2]">Loading exam set…</div>;

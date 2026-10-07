@@ -19,13 +19,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const data: Record<string, unknown> = {};
   if (body.payload) {
     const pl = body.payload as {
-      type: string; stem: string; options: string[]; correct: string[]; parts?: { stem?: string; label?: string; max?: number }[];
+      type: string; stem: string; options: string[]; correct: string[]; optionMarks?: number[]; parts?: { stem?: string; label?: string; max?: number }[];
       explanation: string; difficulty: string; difficultyIndex?: number; category?: string; sector?: string;
       tags?: string[]; mediaUrl?: string; marks?: number | null; stemId?: string; inheritOptions?: boolean;
       topicId?: string;
     };
     const parsed = validateQuestion({
-      type: pl.type, stem: pl.stem, options: pl.options ?? [], correct: pl.correct ?? [], parts: pl.parts ?? [],
+      type: pl.type, stem: pl.stem, options: pl.options ?? [], correct: pl.correct ?? [],
+      optionMarks: Array.isArray(pl.optionMarks) ? pl.optionMarks : [], parts: pl.parts ?? [],
       explanation: pl.explanation, difficulty: (pl.difficulty ?? "medium") as "easy" | "medium" | "hard",
       difficultyIndex: pl.difficultyIndex ?? 3, category: pl.category ?? "tertiary", sector: pl.sector ?? "",
       tags: pl.tags ?? [], mediaUrl: pl.mediaUrl ?? "",

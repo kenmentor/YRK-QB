@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 // Bundle format (also the on-disk transport):
 // folder: { format: "yrk-folder/1", name, folders: [...], questions: [...] }
-// question: { format: "yrk-question/1", type, stem, options, correct, parts,
-//   explanation, difficultyIndex, category, sector, tags, mediaUrl, topicPath }
+// question: { format: "yrk-question/1", type, stem, options, correct, optionMarks,
+//   parts, explanation, difficultyIndex, category, sector, tags, mediaUrl, topicPath }
 export interface BundleQuestion {
   format: "yrk-question/1";
   ref?: string; // source id — lets imports remap stem links within a bundle
@@ -17,6 +17,7 @@ export interface BundleQuestion {
   stem: string;
   options: string[];
   correct: string[];
+  optionMarks: number[];
   parts: { stem?: string; label?: string; max?: number }[];
   explanation: string;
   difficultyIndex: number;
@@ -72,7 +73,7 @@ export async function GET(req: Request) {
     if (!f || f.ownerId !== root!.ownerId) return null;
     const kids = ((await db.folder.findMany({ where: { ownerId: f.ownerId, parentId: fid }, take: 200, orderBy: { createdAt: "asc" } }) as unknown as FolderDoc[])).filter(isBankFolder);
     const docs = ((await db.question.findMany({ where: { folderId: fid, mergedIntoId: null }, take: 500, orderBy: { createdAt: "asc" } }) as unknown as {
-      id: string; type: string; stem: string; options: string; correct: string; parts?: string; explanation: string;
+      id: string; type: string; stem: string; options: string; correct: string; optionMarks?: string; parts?: string; explanation: string;
       difficultyIndex?: number; difficulty: string; category?: string; sector?: string; tags?: string; mediaUrl?: string; topicId?: string;
       marks?: number | null; stemId?: string | null; inheritOptions?: boolean;
     }[])).filter(isBankQuestion);
@@ -84,6 +85,7 @@ export async function GET(req: Request) {
         ref: qd.id,
         type: qd.type, stem: qd.stem,
         options: js<string[]>(qd.options, []), correct: js<string[]>(qd.correct, []),
+        optionMarks: js<number[]>(qd.optionMarks, []),
         parts: js(qd.parts, []),
         explanation: qd.explanation,
         difficultyIndex: qd.difficultyIndex ?? (qd.difficulty === "easy" ? 2 : qd.difficulty === "hard" ? 4 : 3),

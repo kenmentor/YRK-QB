@@ -26,6 +26,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     data: {
       stem: body.stem ?? draft.stem, options: body.options ? JSON.stringify(body.options) : draft.options,
       correct: body.correct ? JSON.stringify(body.correct) : draft.correct,
+      optionMarks: body.optionMarks !== undefined ? JSON.stringify(body.optionMarks ?? []) : (draft as { optionMarks?: string }).optionMarks ?? "[]",
       parts: body.parts !== undefined ? (typeof body.parts === "string" ? body.parts : JSON.stringify(body.parts)) : (draft as { parts?: string }).parts ?? "[]",
       explanation: body.explanation ?? draft.explanation,
       difficulty: body.difficulty ?? draft.difficulty,

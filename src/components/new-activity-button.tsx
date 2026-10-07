@@ -33,12 +33,12 @@ export function NewActivityButton({ variant, size, label }: {
   }, [open ]);
 
   async function create() {
-    if (!title.trim()) { toast("Give the activity a title."); titleRef.current?.focus(); return; }
+    if (!title.trim()) { toast("Give the activity a title.", "err"); titleRef.current?.focus(); return; }
     setBusy(true);
     const res = await fetch("/api/activities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, category, sector, visibility }) });
     const d = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) { toast(d.error ?? "Couldn't create"); return; }
+    if (!res.ok) { toast(d.error ?? "Couldn't create", "err"); return; }
     window.location.href = `/activities/${d.id}`;
   }
 

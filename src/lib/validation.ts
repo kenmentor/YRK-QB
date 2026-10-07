@@ -68,6 +68,9 @@ export const questionSchema = z.object({
   stem: z.string().min(8, "Stem must be at least 8 characters"),
   options: z.array(z.string()),
   correct: z.array(z.string()),
+  // Per-option marks, aligned with options. Default 0 (wrong); the correct
+  // option(s) take the score. Empty = legacy binary grading.
+  optionMarks: z.array(z.number().min(0).max(1000)).default([]),
   parts: z.array(partSchema).default([]),
   explanation: z.string().max(5000).default(""),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
@@ -89,6 +92,9 @@ export const questionSchema = z.object({
 
   if (q.type === "mcq" && q.correct.length !== 1) issue("MCQ must have exactly one correct answer");
   if (q.type === "mcq" && q.options.length < 2) issue("MCQ needs at least 2 options", ["options"]);
+  if ((q.type === "mcq" || q.type === "multi_select" || q.type === "sct") && q.optionMarks.length && q.optionMarks.length !== q.options.length) {
+    issue("Option marks must cover every option (or stay empty for default)", ["options"]);
+  }
   if (q.type === "multi_select" && q.correct.length < 1) issue("Multi-select needs at least one correct answer");
   if (q.type === "true_false") {
     if (q.options.length !== 2) issue("True/false must have exactly 2 options", ["options"]);

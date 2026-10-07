@@ -24,7 +24,7 @@ export function ImportModal({ scopeName, parentId, onDone, onClose }: {
     try {
       setParsed(await parseImportFile(file));
     } catch {
-      toast("Couldn't read that file.");
+      toast("Couldn't read that file.", "err");
     }
   }
 
@@ -44,8 +44,8 @@ export function ImportModal({ scopeName, parentId, onDone, onClose }: {
     const d = await res.json().catch(() => ({}));
     setBusy(false);
     if (!res.ok) {
-      toast(d.error ?? "Import failed");
-      if (d.issues) toast(d.issues.slice(0, 3).join(" · "));
+      toast(d.error ?? "Import failed", "err");
+      if (d.issues) toast(d.issues.slice(0, 3).join(" · "), "err");
       return;
     }
     toast(`Imported ${d.questions} questions into “${parsed.bundle.name}”.`);

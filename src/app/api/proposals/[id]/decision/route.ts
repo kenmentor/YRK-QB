@@ -26,7 +26,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const p = JSON.parse(proposal.payload) as {
       type: string; stem: string; options: string[]; correct: string[]; parts?: { stem?: string; label?: string; max?: number }[];
       explanation: string; difficulty: string; difficultyIndex?: number; category?: string; sector?: string;
-      tags?: string[]; mediaUrl?: string; topicId: string | null;
+      tags?: string[]; mediaUrl?: string; marks?: number | null; stemId?: string; inheritOptions?: boolean;
+      topicId: string | null;
     };
     // Same bar as the workspace flow: full schema validation, topic must
     // belong to the proposal's subject, no silent duplicates.
@@ -35,6 +36,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       explanation: p.explanation, difficulty: (p.difficulty ?? "medium") as "easy" | "medium" | "hard",
       difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "",
       mediaUrl: p.mediaUrl ?? "", tags: p.tags ?? [],
+      marks: p.marks ?? null, stemId: p.stemId ?? "", inheritOptions: !!p.inheritOptions,
     });
     if (!parsed.success) return NextResponse.json({ error: "Payload fails question validation", issues: parsed.error.issues }, { status: 422 });
     if (p.topicId) {
@@ -52,6 +54,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         parts: JSON.stringify(p.parts ?? []), explanation: p.explanation,
         difficulty: p.difficulty ?? "medium", difficultyIndex: p.difficultyIndex ?? 3,
         category: p.category ?? "tertiary", sector: p.sector ?? "", mediaUrl: p.mediaUrl ?? "",
+        marks: p.marks ?? null, stemId: p.stemId || null, inheritOptions: !!p.inheritOptions,
         tags: JSON.stringify(["community", ...((p.tags ?? []) as string[])]), creatorId: proposal.contributorId,
       }
     });

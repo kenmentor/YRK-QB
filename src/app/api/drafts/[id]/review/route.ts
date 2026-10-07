@@ -18,6 +18,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     id: string; workspaceId: string; authorId: string; type: string; stem: string; options: string; correct: string;
     explanation: string; difficulty: string; tags: string; status: string; parts?: string;
     difficultyIndex?: number; category?: string; sector?: string; mediaUrl?: string;
+    marks?: number | null; stemId?: string | null; inheritOptions?: boolean;
   } | null);
   if (!draft) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const role = await getMembership(user.id, draft.workspaceId);
@@ -32,6 +33,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       explanation: draft.explanation, difficulty: draft.difficulty as "easy" | "medium" | "hard",
       difficultyIndex: draft.difficultyIndex ?? 3, category: draft.category ?? "tertiary",
       sector: draft.sector ?? "", mediaUrl: draft.mediaUrl ?? "", tags: JSON.parse(draft.tags),
+      marks: draft.marks ?? null, stemId: draft.stemId ?? "", inheritOptions: !!draft.inheritOptions,
     });
     if (!parsed.success) return NextResponse.json({ error: "Fix validation before review", issues: parsed.error.issues }, { status: 422 });
     try {

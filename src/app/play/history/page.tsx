@@ -7,7 +7,7 @@ import { PageHero, EmptyState } from "@/components/page-hero";
 import { History, Target } from "lucide-react";
 
 export default function HistoryPage() {
-  const [data, setData] = useState<{ attempts: { id: string; mode: string; score: number; total: number }[]; weakAreas: Record<string, { correct: number; total: number; name: string }> }>({ attempts: [], weakAreas: {} });
+  const [data, setData] = useState<{ attempts: { id: string; mode: string; score: number | null; total: number; marksEarned?: number | null; marksTotal?: number; withheld?: boolean }[]; weakAreas: Record<string, { correct: number; total: number; name: string }> }>({ attempts: [], weakAreas: {} });
   useEffect(() => { fetch("/api/quiz/attempts").then((r) => r.json()).then(setData); }, []);
   const modeLabel = (m: string) => (m === "exam" ? "Test" : m === "selftest" ? "Self test" : m === "practice" ? "Practice" : m);
   const weak = Object.values(data.weakAreas).sort((a, b) => (a.correct / a.total) - (b.correct / b.total));
@@ -18,12 +18,19 @@ export default function HistoryPage() {
         <Card><CardHeader><CardTitle className="flex items-center gap-2"><History className="h-4 w-4 text-brand-600" />Attempts</CardTitle><CardDescription>Latest first, practice, self tests and tests together.</CardDescription></CardHeader>
           <CardContent className="grid gap-2">
             {data.attempts.map((a) => {
-              const pct = a.total ? Math.round((a.score / a.total) * 100) : 0;
+              const pct = a.total && a.score != null ? Math.round((a.score / a.total) * 100) : 0;
               return (
                 <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-[var(--yrk-border-subtle)] px-3.5 py-2.5 text-sm">
                   <Badge tone={a.mode === "exam" ? "merged" : "draft"}>{modeLabel(a.mode)}</Badge>
-                  <span className="font-semibold">{a.score}/{a.total}</span>
-                  <span className="text-slate-400 dark:text-[var(--yrk-text-tertiary)]">· {pct}%</span>
+                  {a.withheld ? (
+                    <span className="font-semibold text-slate-400">Withheld by examiner</span>
+                  ) : (
+                    <>
+                      <span className="font-semibold">{a.score}/{a.total}</span>
+                      {a.marksTotal != null && a.marksTotal > 0 && <span className="text-slate-400 dark:text-[var(--yrk-text-tertiary)]">· {a.marksEarned ?? 0}/{a.marksTotal} marks</span>}
+                      <span className="text-slate-400 dark:text-[var(--yrk-text-tertiary)]">· {pct}%</span>
+                    </>
+                  )}
                   <span className="ml-auto h-1.5 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-white/[0.07]"><span className="block h-full rounded-full bg-slate-900" style={{ width: `${pct}%` }} /></span>
                 </div>
               );

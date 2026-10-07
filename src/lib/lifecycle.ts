@@ -27,6 +27,7 @@ export function findDuplicate(stem: string, existingNormStems: string[]): string
 }
 
 export function gradeAnswer(questionCorrect: string[], given: string[], type: string): boolean {
+  if (type === "stem") return false; // stimuli never score
   if (type === "essay" || type === "short_answer") {
     // Theory is self-marked: counts as answered; correct if substantive attempt.
     return (given.join(" ").trim().length >= 3);
@@ -62,7 +63,24 @@ export function gradeAnswer(questionCorrect: string[], given: string[], type: st
   return normArr(given) === normArr(questionCorrect);
 }
 
-// Rubric (examiner-scored) formats: self/peer-scored in v1 via manual totals.
+// Smart default marks: one per scorable unit, essay weight, hard bonus.
+export function suggestMarks(args: {
+  type: string;
+  correct?: string[];
+  parts?: { max?: number }[];
+  difficultyIndex?: number;
+}): number {
+  const { type, correct = [], parts = [], difficultyIndex = 3 } = args;
+  let base: number;
+  if (isRubricType(type)) base = Math.max(1, rubricTotal(parts));
+  else if (type === "essay") base = 5;
+  else if (type === "mtf" || type === "emq" || type === "matching" || type === "kfq" || type === "meq" || type === "compound") base = Math.max(1, parts.length);
+  else if (type === "multi_select") base = Math.max(1, correct.length);
+  else if (type === "stem") base = 0;
+  else base = 1;
+  if (base > 0 && difficultyIndex >= 4 && type !== "essay" && !isRubricType(type)) base += 1;
+  return Math.max(0, base);
+}
 export const RUBRIC_TYPES = ["osce", "dops", "minicex", "msf", "viva"];
 
 export function isRubricType(type: string): boolean {

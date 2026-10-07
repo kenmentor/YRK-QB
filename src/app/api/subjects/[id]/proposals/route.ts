@@ -36,7 +36,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         type: p.type ?? "mcq", stem: p.stem, options: p.options ?? [], correct: p.correct ?? [],
         parts: p.parts ?? [], explanation: p.explanation, difficulty: p.difficulty ?? "medium",
         difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "",
-        tags: p.tags ?? [], mediaUrl: p.mediaUrl ?? "", topicId: p.topicId ?? null,
+        tags: p.tags ?? [], mediaUrl: p.mediaUrl ?? "",
+        marks: p.marks ?? null, stemId: p.stemId ?? "", inheritOptions: !!p.inheritOptions,
+        topicId: p.topicId ?? null,
       }),
       message: body.message ?? "", status: "pending", adminMessage: ""
     }

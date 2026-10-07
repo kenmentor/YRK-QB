@@ -2,6 +2,7 @@
 // (never import the route — it drags the DB driver into the client).
 export interface WireQuestion {
   format: "yrk-question/1";
+  ref?: string;
   type: string;
   stem: string;
   options: string[];

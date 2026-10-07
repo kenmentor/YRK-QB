@@ -7,6 +7,8 @@ export interface ExamTicket {
   ids: string[];
   topicId?: string;
   subjectId?: string;
+  setId?: string;
+  activityId?: string;
   startedAt: number;
   durationSecs: number;
 }

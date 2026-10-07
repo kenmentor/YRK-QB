@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Pencil, X, Paperclip } from "lucide-react";
@@ -20,6 +21,31 @@ export interface ViewQuestion {
   tags?: string;
   mediaUrl?: string;
   type: string;
+  stemId?: string | null;
+  inheritOptions?: boolean;
+}
+
+export interface StemDoc {
+  id: string;
+  stem: string;
+  options: string;
+}
+
+// Lettered option grid — clean at any count (even 15).
+export function OptionGrid({ options, highlight }: { options: string[]; highlight?: string[] }) {
+  const hi = new Set(highlight ?? []);
+  return (
+    <div className="grid gap-1.5 sm:grid-cols-2">
+      {options.map((o, i) => (
+        <div key={`${i}-${o}`} className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 text-sm ${hi.has(o) ? "border-emerald-300 bg-emerald-50 font-medium text-emerald-900" : "border-slate-200 text-slate-700"}`}>
+          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-black ${hi.has(o) ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"}`}>
+            {String.fromCharCode(65 + i)}
+          </span>
+          <span className="min-w-0 break-words">{o}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function js<T>(raw: string | undefined, fb: T): T {
@@ -34,15 +60,41 @@ export function QuestionView({ q, canEdit, onEdit, onClose }: {
   onEdit: () => void;
   onClose: () => void;
 }) {
+  const [linked, setLinked] = useState<StemDoc | null>(null);
+  useEffect(() => {
+    setLinked(null);
+    if (!q.stemId) return;
+    fetch(`/api/bank/${q.stemId}`).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (d?.question?.type === "stem") setLinked({ id: d.question.id, stem: d.question.stem, options: d.question.options });
+    }).catch(() => {});
+  }, [q.id, q.stemId]);
   const Icon = fileIcon(q.type);
   const opts = js<string[]>(q.options, []);
   const correct = js<string[]>(q.correct, []);
   const parts = js<ViewPart[]>(q.parts, []);
   const tags = js<string[]>(q.tags, []);
   const rubricTotal = parts.reduce((s, p) => s + (Number(p.max) || 0), 0);
+  // Inherited options resolve from the linked stem when present.
+  const linkedOpts = js<string[]>(linked?.options, []);
+  const effShared = q.inheritOptions && linkedOpts.length ? linkedOpts : null;
 
   function renderBody() {
-    if (q.type === "fill_in") {
+    if (q.type === "stem") {
+      return (
+        <div className="grid gap-3">
+          <div className="rounded-2xl bg-brand-50 p-4 text-[15px] leading-relaxed text-slate-800 dark:bg-brand-500/10">
+            {q.stem}
+          </div>
+          {!!opts.length && (
+            <div className="grid gap-2">
+              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Shared options · inherited by linked items</div>
+              <OptionGrid options={opts} />
+            </div>
+          )}
+          <div className="text-[13px] text-slate-400">Stimulus — never scored.</div>
+        </div>
+      );
+    }    if (q.type === "fill_in") {
       const segs = (q.stem ?? "").split("___");
       return (
         <p className="text-[15px] leading-relaxed text-slate-800 dark:text-[var(--yrk-text-primary)]">
@@ -83,9 +135,10 @@ export function QuestionView({ q, canEdit, onEdit, onClose }: {
     }
     if (["emq", "matching", "kfq", "meq", "compound"].includes(q.type)) {
       const shared = ["emq", "matching"].includes(q.type);
+      const listOpts = (shared && effShared) || opts;
       return (
         <div className="grid gap-2">
-          {shared && <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">Shared options: {opts.join(" · ")}</div>}
+          {shared && !!listOpts.length && <OptionGrid options={listOpts} />}
           {parts.map((p, i) => (
             <div key={i} className="rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] px-3.5 py-2.5 text-sm">
               <div className="font-medium">{i + 1}. {p.stem}</div>
@@ -111,9 +164,10 @@ export function QuestionView({ q, canEdit, onEdit, onClose }: {
     if (q.type === "essay" || q.type === "short_answer") {
       return <div className="rounded-xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] p-4 text-sm leading-relaxed text-slate-600 dark:text-[var(--yrk-text-secondary)]">Written answer — marking guide below.</div>;
     }
+    const dispOpts = effShared ?? opts;
     return (
       <div className="grid gap-2">
-        {opts.map((o) => {
+        {dispOpts.map((o) => {
           const isRight = correct.includes(o);
           return (
             <div key={o} className={`flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-sm ${isRight ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950 font-medium text-emerald-900 dark:text-emerald-200" : "border-slate-200 dark:border-[var(--yrk-border-subtle)] text-slate-700 dark:text-[#c6ccd6]"}`}>
@@ -143,6 +197,18 @@ export function QuestionView({ q, canEdit, onEdit, onClose }: {
         </div>
         <div className="grid max-h-[70vh] gap-4 overflow-y-auto p-5 sm:p-6">
           <h2 className="text-lg font-semibold leading-snug text-slate-900 dark:text-[var(--yrk-text-primary)]">{q.stem}</h2>
+          {q.stemId && (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-3 text-sm dark:border-[var(--yrk-border-subtle)]">
+              {linked ? (
+                <div className="grid gap-2">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">From the shared stem</div>
+                  <p className="leading-relaxed text-slate-600">{linked.stem}</p>
+                </div>
+              ) : (
+                <div className="text-[13px] text-slate-400">Linked stem unavailable — playing standalone{q.inheritOptions ? " on its own options" : ""}.</div>
+              )}
+            </div>
+          )}
           {renderBody()}
           <div className="rounded-2xl bg-slate-50 dark:bg-[var(--yrk-surface-canvas)] p-4">
             <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Answer & guide</div>

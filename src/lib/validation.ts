@@ -9,6 +9,7 @@ export const QUESTION_TYPES = [
   "fill_in", "saq", "short_answer", "essay", "compound", "meq",
   "matching", "emq", "kfq",
   "osce", "dops", "minicex", "msf", "viva",
+  "stem",
 ] as const;
 
 export type QuestionType = (typeof QUESTION_TYPES)[number];
@@ -68,9 +69,14 @@ export const questionSchema = z.object({
   options: z.array(z.string()),
   correct: z.array(z.string()),
   parts: z.array(partSchema).default([]),
-  explanation: z.string().min(4, "Explanation / marking guide is required before review"),
+  explanation: z.string().max(5000).default(""),
   difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
   difficultyIndex: z.number().min(1).max(5).default(3),
+  // Null = auto (smart suggestion); a number pins irregular marks.
+  marks: z.number().min(0).max(1000).nullable().default(null),
+  // Shared-stimulus link: item draws context (and optionally options) from a stem.
+  stemId: z.string().max(100).default(""),
+  inheritOptions: z.boolean().default(false),
   category: z.enum(CATEGORIES as unknown as [string, ...string[]]).default("tertiary"),
   sector: z.string().max(80).default(""),
   tags: z.array(z.string()).default([]),
@@ -117,8 +123,16 @@ export const questionSchema = z.object({
     if (parts.some((p) => !(p.label ?? "").trim())) issue("Every criterion needs a label", ["parts"]);
     if (parts.some((p) => !(p.max ?? 0) || (p.max ?? 0) <= 0)) issue("Every criterion needs marks above zero", ["parts"]);
   }
+  if (q.type === "stem") {
+    if (q.correct.some((c) => c.trim())) issue("Stems never carry answers");
+    if (q.parts.length) issue("Stems carry no sub-parts", ["parts"]);
+    if (q.marks !== null && q.marks !== 0) issue("Stems are unscored", ["marks"]);
+    return;
+  }
   if ((q.type === "essay" || q.type === "short_answer" || q.type === "saq") && q.explanation.length < 10) {
     issue("Written answers need a marking guide / model answer (10+ chars)", ["explanation"]);
+  } else if (!["essay", "short_answer", "saq"].includes(q.type) && q.explanation.length < 4) {
+    issue("Explanation / guide is required before review", ["explanation"]);
   }
 });
 
@@ -128,9 +142,10 @@ export function validateQuestion(input: unknown) {
   return questionSchema.safeParse(input);
 }
 
-export function styleOf(type: string): "objective" | "written" | "matching" | "rubric" {
+export function styleOf(type: string): "objective" | "written" | "matching" | "rubric" | "stimulus" {
   if ((RUBRIC_TYPES as string[]).includes(type)) return "rubric";
   if (type === "matching" || type === "emq" || type === "kfq") return "matching";
+  if (type === "stem") return "stimulus";
   if (type === "mcq" || type === "multi_select" || type === "true_false" || type === "mtf" || type === "sct") return "objective";
   return "written";
 }

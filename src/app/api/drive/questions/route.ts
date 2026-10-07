@@ -14,13 +14,15 @@ export async function POST(req: Request) {
   const user = (await getAuthUser(req) as unknown as { id: string } | null);
   if (!user) return NextResponse.json({ error: "Login required" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
-  const { type, stem, options, correct, explanation, difficulty, difficultyIndex, category, sector, topicId, folderId, tags, parts, mediaUrl } = body ?? {};
+  const { type, stem, options, correct, explanation, difficulty, difficultyIndex, marks, stemId, inheritOptions, category, sector, topicId, folderId, tags, parts, mediaUrl } = body ?? {};
 
   const parsed = validateQuestion({
     type, stem, options: options ?? [], correct: correct ?? [],
     parts: parts ?? [],
     explanation, difficulty: difficulty ?? "medium",
     difficultyIndex: Number(difficultyIndex) || 3,
+    marks: marks === null || marks === undefined ? null : Number(marks),
+    stemId: stemId ? String(stemId) : "", inheritOptions: !!inheritOptions,
     category: category ?? "tertiary", sector: sector ?? "",
     tags: tags ?? [], mediaUrl: mediaUrl ?? "",
   });
@@ -60,6 +62,9 @@ export async function POST(req: Request) {
       explanation: parsed.data.explanation,
       difficulty: bandFromIndex(parsed.data.difficultyIndex),
       difficultyIndex: parsed.data.difficultyIndex,
+      marks: parsed.data.marks,
+      stemId: parsed.data.stemId || null,
+      inheritOptions: parsed.data.inheritOptions,
       category: parsed.data.category,
       sector: parsed.data.sector,
       mediaUrl: parsed.data.mediaUrl,

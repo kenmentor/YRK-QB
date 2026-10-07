@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
@@ -9,10 +9,11 @@ import { toast } from "@/components/ui/toast";
 import { CheckCircle2, XCircle, Flag, Timer, ArrowLeft, ArrowRight, RotateCcw, GripVertical, X, LayoutGrid } from "lucide-react";
 
 interface QPart { stem?: string; label?: string; max?: number; }
-interface Q { id: string; stem: string; options: string; parts?: string; correct?: string; explanation?: string; difficulty: string; type: string; }
+interface Q { id: string; stem: string; options: string; parts?: string; correct?: string; explanation?: string; difficulty: string; type: string; stemId?: string | null; inheritOptions?: boolean; }
+interface StemDoc { id: string; stem: string; options: string[]; }
 interface Topic { id: string; name: string; subject: string; exam: string; }
 interface PartRow { stem: string; given: string[]; expected: string[]; ok: boolean; }
-interface Breakdown { questionId: string; stem: string; given: string[]; correctAnswers: string[]; explanation: string; ok: boolean; type: string; parts?: PartRow[]; }
+interface Breakdown { questionId: string; stem: string; given: string[]; correctAnswers: string[]; explanation: string; ok: boolean; type: string; max?: number; earned?: number; parts?: PartRow[]; }
 type Phase = "setup" | "running" | "results";
 type Mode = "practice" | "selftest" | "exam";
 
@@ -20,6 +21,42 @@ const MODE_LABEL: Record<Mode, string> = { practice: "Practice", selftest: "Self
 const SCT_SCALE = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
 const RUBRIC = ["osce", "dops", "minicex", "msf", "viva"];
 const PARTS_Q = ["mtf", "emq", "matching", "kfq", "meq", "compound"];
+
+function parseStemList(raw: unknown): Record<string, StemDoc> {
+  if (!Array.isArray(raw)) return {};
+  const m: Record<string, StemDoc> = {};
+  for (const s of raw as { id: string; stem: string; options: unknown }[]) {
+    if (!s?.id) continue;
+    let options: string[] = [];
+    try {
+      const v = typeof s.options === "string" ? JSON.parse(s.options) : s.options;
+      if (Array.isArray(v)) options = v.map(String);
+    } catch { /* keep empty */ }
+    m[s.id] = { id: s.id, stem: s.stem ?? "", options };
+  }
+  return m;
+}
+
+// Split stems out of a full snapshot; fetch any linked stems not included.
+async function splitStems(all: Q[]): Promise<{ play: Q[]; map: Record<string, StemDoc> }> {
+  const map: Record<string, StemDoc> = {};
+  for (const q of all) {
+    if (q.type !== "stem") continue;
+    map[q.id] = { id: q.id, stem: q.stem ?? "", options: jsArr(q.options) };
+  }
+  const play = all.filter((q) => q.type !== "stem");
+  const missing = Array.from(new Set(play.map((q) => q.stemId).filter(Boolean) as string[])).filter((id) => !map[id]);
+  for (const id of missing.slice(0, 20)) {
+    try {
+      const r = await fetch(`/api/bank/${id}`);
+      const d = await r.json();
+      if (r.ok && d.question?.type === "stem") {
+        map[id] = { id, stem: d.question.stem ?? "", options: jsArr(d.question.options) };
+      }
+    } catch { /* orphaned: runner shows a note */ }
+  }
+  return { play, map };
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -73,6 +110,10 @@ export default function QuizPage() {
   const [setTitle, setSetTitle] = useState("");
   const [activityId, setActivityId] = useState("");
   const [activityTitle, setActivityTitle] = useState("");
+  const [activityMeta, setActivityMeta] = useState<{
+    timeLimitMinutes?: number | null; attemptsLeft?: number | null; maxAttempts?: number | null;
+    availableFrom?: string | null; availableUntil?: string | null; kind?: string; showScore?: string;
+  } | null>(null);
   const [activities, setActivities] = useState<{ id: string; title: string; banner: string; ownerName: string; questionCount: number; modes: string[]; visibility?: string; category?: string; sector?: string }[]>([]);
   const [actsLoading, setActsLoading] = useState(true);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -81,7 +122,8 @@ export default function QuizPage() {
   const [subjectName, setSubjectName] = useState("");
   const [count, setCount] = useState(10);
   const [minutes, setMinutes] = useState(10);
-  const [items, setItems] = useState<Q[]>([]); // snapshot
+  const [items, setItems] = useState<Q[]>([]); // snapshot (stems excluded)
+  const [stems, setStems] = useState<Record<string, StemDoc>>({}); // linked stimuli by id
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [rubric, setRubric] = useState<Record<string, number[]>>({}); // per-criterion scores
@@ -89,8 +131,12 @@ export default function QuizPage() {
   const [meqShown, setMeqShown] = useState<Record<string, number>>({});
   const [seconds, setSeconds] = useState(600);
   const [showPalette, setShowPalette] = useState(false);
-  const [result, setResult] = useState<{ score: number; total: number; wrongIds: string[]; late?: boolean; breakdown?: Breakdown[] } | null>(null);
+  const [result, setResult] = useState<{ score: number; total: number; wrongIds: string[]; late?: boolean; withheld?: boolean; marksEarned?: number; marksTotal?: number; breakdown?: Breakdown[] } | null>(null);
   const [wrongOnly, setWrongOnly] = useState(false);
+  // Focus guard: excursions away during a strict round.
+  const [violations, setViolations] = useState(0);
+  const [away, setAway] = useState<number | null>(null);
+  const awayRef = useRef(false);
   const [error, setError] = useState("");
   const [startedAt, setStartedAt] = useState(0);
   const [ticket, setTicket] = useState("");
@@ -118,7 +164,20 @@ export default function QuizPage() {
     if (setId) fetch(`/api/exam-sets/${setId}`).then((r) => (r.ok ? r.json() : null)).then((d) => d && setSetTitle(d.set.title)).catch(() => {});
   }, [setId]);
   useEffect(() => {
-    if (activityId) fetch(`/api/activities/${activityId}`).then((r) => (r.ok ? r.json() : null)).then((d) => d && setActivityTitle(d.meta.title)).catch(() => {});
+    if (activityId) fetch(`/api/activities/${activityId}`).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d) return;
+      setActivityTitle(d.meta.title);
+      setActivityMeta({
+        timeLimitMinutes: d.meta.timeLimitMinutes ?? null,
+        attemptsLeft: d.meta.attemptsLeft ?? null,
+        maxAttempts: d.meta.maxAttempts ?? null,
+        availableFrom: d.meta.availableFrom ?? null,
+        availableUntil: d.meta.availableUntil ?? null,
+        kind: d.meta.kind ?? "quiz",
+        showScore: d.meta.showScore ?? "immediate",
+      });
+      if (d.meta.timeLimitMinutes && mode !== "practice") setMinutes(d.meta.timeLimitMinutes);
+    }).catch(() => {});
   }, [activityId]);
   useEffect(() => {
     Promise.all(["mine", "shared", "public"].map((s) => fetch(`/api/activities?scope=${s}`).then((r) => (r.ok ? r.json() : [])))).then(([m, sh, p]) => {
@@ -135,6 +194,39 @@ export default function QuizPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seconds, phase, mode, result]);
 
+  // Focus guard: tab-out or blur trips a 10s return countdown in Test
+  // (auto-submit on expiry); self test warns without auto-submit.
+  useEffect(() => {
+    if (phase !== "running" || mode === "practice" || result) return;
+    const trip = () => {
+      if (awayRef.current) return;
+      awayRef.current = true;
+      setViolations((v) => v + 1);
+      setAway(10);
+    };
+    const back = () => { awayRef.current = false; setAway(null); };
+    const onVis = () => { if (document.hidden) trip(); else back(); };
+    window.addEventListener("blur", trip);
+    window.addEventListener("focus", back);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("blur", trip);
+      window.removeEventListener("focus", back);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, mode, result]);
+  useEffect(() => {
+    if (away == null || result) return;
+    if (away <= 0) {
+      if (mode === "exam") submitAll(true);
+      return;
+    }
+    const t = setTimeout(() => setAway((a) => (a == null ? a : a - 1)), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [away, result, mode]);
+
   const cur = items[idx];
   const opts: string[] = useMemo(() => (cur ? jsArr(cur.options) : []), [cur]);
   const parts: QPart[] = useMemo(() => (cur ? jsParts(cur.parts) : []), [cur]);
@@ -143,6 +235,11 @@ export default function QuizPage() {
   const picked: string[] = cur ? (answers[cur.id] ?? []) : [];
   const rScores: number[] = cur ? (rubric[cur.id] ?? []) : [];
   const isRubric = cur ? RUBRIC.includes(cur.type) : false;
+  // Inherited options resolve from the linked stem; missing stems degrade
+  // to standalone with a note (never a crash, never a block).
+  const linkedStem = cur?.stemId ? stems[cur.stemId] ?? null : null;
+  const stemMissing = !!cur?.stemId && !linkedStem;
+  const answerOpts = cur && cur.inheritOptions && linkedStem ? linkedStem.options : opts;
   const answeredCount = items.filter((q) => (answers[q.id]?.some((a) => String(a).trim()) || (rubric[q.id]?.some((v) => Number(v) > 0))));
   const progress = items.length ? Math.round((answeredCount.length / items.length) * 100) : 0;
 
@@ -174,8 +271,9 @@ export default function QuizPage() {
       if (!res.ok) { setError(data.error ?? "Could not start test"); return; }
       if (data.skipped) toast(`${data.skipped} set question${data.skipped === 1 ? " is" : "s are"} no longer live, skipped.`);
       setItems(data.items);
+      setStems(parseStemList(data.stems));
       setTicket(data.ticket);
-      setIdx(0); setAnswers({}); setRubric({}); setFlagged({}); setMeqShown({}); setResult(null);
+      setIdx(0); setAnswers({}); setRubric({}); setFlagged({}); setMeqShown({}); setResult(null); setViolations(0); setAway(null); awayRef.current = false; setStems({});
       setSeconds(data.durationSecs);
       setStartedAt(data.startedAt);
       setPhase("running");
@@ -194,9 +292,11 @@ export default function QuizPage() {
       all = shuffle((Array.isArray(data) ? data : []) as Q[]).slice(0, Math.max(1, Math.min(count, 500)));
       if (!all.length) { setError("No questions for this filter, try All topics"); return; }
     }
-    setItems(all); // snapshot frozen (set order kept for exam sets)
-    setIdx(0); setAnswers({}); setRubric({}); setFlagged({}); setMeqShown({}); setResult(null); setTicket("");
-    setSeconds(minutes * 60);
+    const split = await splitStems(all); // stems display-only, items stay playable
+    setItems(split.play);
+    setStems(split.map);
+    setIdx(0); setAnswers({}); setRubric({}); setFlagged({}); setMeqShown({}); setResult(null); setViolations(0); setAway(null); awayRef.current = false; setTicket("");
+    setSeconds(effMinutes * 60);
     setStartedAt(Date.now());
     setPhase("running");
   }
@@ -252,8 +352,10 @@ export default function QuizPage() {
     return parts.reduce((s, p) => s + (Number(p.max) || 0), 0);
   }
 
-  async function submitAll(auto = false) {
-    // Whole snapshot goes: server grades every snapshotted question so
+  // Examiner-fixed clock wins over the candidate input whenever set.
+  const effMinutes = mode !== "practice" && activityMeta?.timeLimitMinutes ? activityMeta.timeLimitMinutes : minutes;
+
+  async function submitAll(auto = false) {    // Whole snapshot goes: server grades every snapshotted question so
     // blanks count as wrong. Test mode additionally sends the signed
     // ticket (server snapshot + clock); self test sends a soft client
     // clock; practice sends its own snapshot. Rubric totals go as manual.
@@ -262,8 +364,8 @@ export default function QuizPage() {
       questionId: q.id, score: (rubric[q.id] ?? []).reduce((s, v) => s + (Number(v) || 0), 0),
     }));
     const body = mode === "exam"
-      ? { mode, ticket, answers: payload, manual }
-      : { mode, topicId, subjectId, questionIds: items.map((q) => q.id), answers: payload, manual, ...(mode === "selftest" ? { startedAt, durationSecs: minutes * 60 } : {}) };
+      ? { mode, ticket, answers: payload, manual, violations, tookSecs: Math.max(0, Math.round((Date.now() - startedAt) / 1000)), activityId: activityId || undefined, setId: setId || undefined }
+      : { mode, topicId, subjectId, activityId: activityId || undefined, setId: setId || undefined, questionIds: items.map((q) => q.id), answers: payload, manual, violations, tookSecs: Math.max(0, Math.round((Date.now() - startedAt) / 1000)), ...(mode === "selftest" ? { startedAt, durationSecs: effMinutes * 60 } : {}) };
     let res: Response;
     try {
       res = await fetch("/api/quiz/attempts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -278,7 +380,8 @@ export default function QuizPage() {
     const wrongIds = bd.length ? bd.filter((b) => !b.ok).map((b) => b.questionId) : items.filter((q) => !isCorrect(q, answers[q.id] ?? [])).map((q) => q.id);
     void auto;
     void startedAt;
-    setResult({ score: data.score ?? 0, total: items.length, wrongIds, late: data.late, breakdown: bd.length ? bd : undefined });
+    setResult({ score: data.score ?? 0, total: items.length, wrongIds, late: data.late, withheld: data.withheld, marksEarned: data.marksEarned, marksTotal: data.marksTotal, breakdown: bd.length ? bd : undefined });
+    if (data.withheld) toast("Submitted — the examiner releases scores on demand.");
     if (data.late) toast("Submitted after time, scored zero. The clock is server-side.");
     setPhase("results");
   }
@@ -290,8 +393,8 @@ export default function QuizPage() {
     const wrong = items.filter((q) => result?.wrongIds.includes(q.id));
     if (!wrong.length) return;
     setWrongOnly(false);
-    setItems(wrong); setIdx(0); setAnswers({}); setRubric({}); setFlagged({}); setMeqShown({}); setResult(null);
-    setSeconds(minutes * 60); setStartedAt(Date.now()); setPhase("running");
+    setItems(wrong); setIdx(0); setAnswers({}); setRubric({}); setFlagged({}); setMeqShown({}); setResult(null); setViolations(0); setAway(null); awayRef.current = false; setStems({});
+    setSeconds(effMinutes * 60); setStartedAt(Date.now()); setPhase("running");
   }
 
   if (phase === "setup") {
@@ -331,7 +434,13 @@ export default function QuizPage() {
           </>}
           <div className="flex gap-3">
             {!sourceId && <label className="yrk-label flex-1">Questions<Input type="number" min={1} max={50} value={count} onChange={(e) => setCount(Number(e.target.value))} /></label>}
-            {mode !== "practice" && <label className="yrk-label flex-1">Minutes<Input type="number" min={1} max={120} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} /></label>}
+            {mode !== "practice" && (
+              activityMeta?.timeLimitMinutes ? (
+                <div className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm"><span className="font-semibold">{activityMeta.timeLimitMinutes} min</span> <span className="text-slate-400">· set by examiner</span></div>
+              ) : (
+                <label className="yrk-label flex-1">Minutes<Input type="number" min={1} max={120} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} /></label>
+              )
+            )}
           </div>
           {error && <div className="rounded-xl bg-red-50 dark:bg-red-950 px-3 py-2 text-[13px] font-medium text-red-700 dark:text-red-300">{error}</div>}
           <Button variant="accent" onClick={start}>Start{sourceId ? "" : ` · ${count} Qs`}</Button>
@@ -349,13 +458,31 @@ export default function QuizPage() {
     });
     const shown = wrongOnly ? rows.filter((b) => !b.ok) : rows;
     const pct = result.total ? Math.round((result.score / result.total) * 100) : 0;
+    const marksLine = result.marksTotal != null && result.marksTotal > 0 ? ` · ${result.marksEarned ?? 0}/${result.marksTotal} marks` : "";
+    if (result.withheld) {
+      return (
+        <div className="grid gap-3">
+          <Card className="overflow-hidden">
+            <div className="px-5 py-5 sm:px-6">
+              <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Submitted</div>
+              <div className="mt-0.5 text-2xl font-black">With the examiner</div>
+              <div className="mt-1 text-[13px] text-slate-500">Scores are hidden on this activity — the examiner releases them on demand. Your answers are recorded and safe.{violations > 0 ? ` ${violations} focus violation${violations === 1 ? "" : "s"} logged.` : ""}</div>
+            </div>
+            <CardContent className="flex flex-wrap gap-2 p-3">
+              <Button variant="outline" size="sm" onClick={() => setPhase("setup")}>New setup</Button>
+              <a href="/play/history"><Button variant="secondary" size="sm">History</Button></a>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
     return (
       <div className="grid gap-3">
         <Card className="overflow-hidden">
           <div className={`px-5 py-5 sm:px-6 ${pct >= 70 ? "bg-emerald-600" : pct >= 40 ? "bg-amber-500" : "bg-rose-600"}`}>
             <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/80">{mode === "exam" ? "Test complete" : mode === "selftest" ? "Self test complete" : "Practice complete"}</div>
             <div className="mt-0.5 text-3xl font-black tabular-nums text-white">{result.score}/{result.total} · {pct}%</div>
-            <div className="mt-1 text-[13px] text-white/85">{result.wrongIds.length ? `${result.wrongIds.length} to review.` : "Clean sweep."}</div>
+            <div className="mt-1 text-[13px] text-white/85">{result.wrongIds.length ? `${result.wrongIds.length} to review.` : "Clean sweep."}{marksLine}{violations > 0 ? ` · ${violations} focus violation${violations === 1 ? "" : "s"}` : ""}</div>
           </div>
           <CardContent className="flex flex-wrap gap-2 p-3">
             <Button variant="outline" size="sm" onClick={() => { setWrongOnly(false); setPhase("setup"); }}>New setup</Button>
@@ -375,7 +502,7 @@ export default function QuizPage() {
           return (
             <Card key={b.questionId} className={b.ok ? "border-l-4 border-l-green-500" : "border-l-4 border-l-red-500"}>
               <CardContent className="yrk-wrap grid gap-2 p-4 text-sm">
-                <div className="flex items-start gap-2 font-medium">{b.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />}<span className="min-w-0">Q{n}. {b.stem}</span></div>
+                <div className="flex items-start gap-2 font-medium">{b.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />}<span className="min-w-0 flex-1">Q{n}. {b.stem}</span>{b.max != null && b.max > 1 && <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-slate-500">{b.earned ?? (b.ok ? b.max : 0)}/{b.max}</span>}</div>
                 {b.parts?.length ? (
                   <div className="grid gap-1">
                     {b.parts.map((p, j) => (
@@ -440,12 +567,21 @@ export default function QuizPage() {
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="mx-auto grid w-full max-w-2xl gap-3">
+        {(linkedStem || stemMissing) && (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 px-4 py-3 text-sm dark:border-[var(--yrk-border-default)]">
+            {linkedStem ? (
+              <><span className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Shared stem</span><p className="mt-1 leading-relaxed">{linkedStem.stem}</p></>
+            ) : (
+              <span className="text-[13px] text-slate-400">Linked stem unavailable — answering standalone.</span>
+            )}
+          </div>
+        )}
         <Card>
           <CardHeader className="pb-3"><CardTitle className="yrk-wrap text-xl font-bold leading-snug">{cur.stem}</CardTitle>
             <div className="pt-1 text-xs text-slate-500 dark:text-[#9aa3b2]">{hintFor(cur, parts)}</div>
           </CardHeader>
           <CardContent className="grid gap-2">
-            {!isFill && !isTheory && !isRubric && !PARTS_Q.includes(cur.type) && cur.type !== "saq" && cur.type !== "sct" && opts.map((o, oi) => {
+            {!isFill && !isTheory && !isRubric && !PARTS_Q.includes(cur.type) && cur.type !== "saq" && cur.type !== "sct" && answerOpts.map((o, oi) => {
               const sel = picked.includes(o);
               const show = showInstant && picked.length > 0;
               const right = correct.includes(o);
@@ -496,12 +632,12 @@ export default function QuizPage() {
                 <span className="font-medium">{i + 1}. {p.stem}</span>
                 <Select value={picked[i] ?? ""} onChange={(e) => setPart(i, e.target.value)}>
                   <option value="">Match to…</option>
-                  {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+                  {answerOpts.map((o) => <option key={o} value={o}>{o}</option>)}
                 </Select>
               </label>
             ))}
             {cur.type === "matching" && (
-              <MatchingInput parts={parts} options={opts} picked={picked} correct={showInstant ? correct : undefined} onAssign={(i, v) => setPart(i, v)} />
+              <MatchingInput parts={parts} options={answerOpts} picked={picked} correct={showInstant ? correct : undefined} onAssign={(i, v) => setPart(i, v)} />
             )}
             {(cur.type === "kfq" || cur.type === "compound") && parts.map((p, i) => (
               <label key={i} className="grid gap-1 text-sm">
@@ -599,6 +735,26 @@ export default function QuizPage() {
         </CardContent>
       </Card>
       </div>
+      {/* focus-guard overlay */}
+      {away != null && phase === "running" && !result && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/60 p-4" onClick={mode === "exam" ? undefined : () => { awayRef.current = false; setAway(null); }}>
+          <div className="yrk-modal grid w-full max-w-sm gap-3 rounded-3xl bg-white p-6 text-center shadow-lift dark:bg-[var(--yrk-surface-elevated)]" onClick={(e) => e.stopPropagation()}>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl font-black tabular-nums text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+              {mode === "exam" ? away : "!"}
+            </div>
+            <div className="text-lg font-bold">Eyes back on the test</div>
+            <p className="text-sm leading-relaxed text-slate-500">
+              {mode === "exam"
+                ? `You left the round. Return within ${away}s or it auto-submits.`
+                : "You left the round. Tap anywhere to resume — no auto-submit in self test."}
+            </p>
+            <div className="text-xs text-slate-400">{violations} focus violation{violations === 1 ? "" : "s"} this round</div>
+            {mode === "exam" && away !== null && away <= 0 && (
+              <div className="text-sm font-semibold text-red-600">Time up — submitting…</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

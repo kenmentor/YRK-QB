@@ -16,6 +16,7 @@ interface ValidatedQ {
   parts: { stem?: string; label?: string; max?: number }[];
   explanation: string; difficultyIndex: number; category: string; sector: string;
   tags: string[]; mediaUrl: string; topicPath: unknown;
+  marks: number | null; stemRef: string; inheritOptions: boolean;
 }
 
 // Resolve a topic path [body?, exam?, subject?, topic] to an id by name walk.
@@ -49,6 +50,8 @@ function checkQuestion(raw: unknown, path: string): { ok: ValidatedQ | null; err
     difficultyIndex: Number(q.difficultyIndex) || 3,
     category: q.category ?? "tertiary", sector: q.sector ?? "",
     tags: q.tags ?? [], mediaUrl: q.mediaUrl ?? "",
+    marks: q.marks ?? null, stemId: typeof q.stemId === "string" ? q.stemId : "",
+    inheritOptions: !!q.inheritOptions,
   });
   if (!parsed.success) return { ok: null, error: `${path}: ${parsed.error.issues[0]?.message ?? "invalid"}` };
   return {
@@ -59,6 +62,9 @@ function checkQuestion(raw: unknown, path: string): { ok: ValidatedQ | null; err
       category: parsed.data.category, sector: parsed.data.sector,
       tags: parsed.data.tags, mediaUrl: parsed.data.mediaUrl,
       topicPath: q.topicPath ?? null,
+      marks: parsed.data.marks ?? null,
+      stemRef: typeof q.stemId === "string" ? q.stemId : "",
+      inheritOptions: !!q.inheritOptions,
     },
   };
 }
@@ -86,6 +92,32 @@ export async function POST(req: Request) {
   }
 
   // Validate everything BEFORE creating anything.
+  // Index in-bundle stems (by ref) so inherited items validate + remap.
+  const bundleStems = new Map<string, string[]>();
+  (function indexStems(node: Partial<BundleFolder>) {
+    if (!node || !Array.isArray(node.questions)) return;
+    for (const qq of node.questions) {
+      const q = qq as { type?: string; ref?: string; options?: string[] };
+      if (q?.type === "stem" && typeof q.ref === "string" && q.ref && Array.isArray(q.options)) {
+        bundleStems.set(q.ref, q.options.map(String));
+      }
+    }
+    if (Array.isArray(node.folders)) {
+      for (const ff of node.folders) indexStems(ff as Partial<BundleFolder>);
+    }
+  })(b);
+
+  function checkLinked(raw: unknown, path: string): { ok: ValidatedQ | null; error?: string } {
+    const q = raw as { inheritOptions?: boolean; stemId?: string; options?: string[] };
+    if (q?.inheritOptions && typeof q.stemId === "string" && bundleStems.has(q.stemId)) {
+      // Validate against the stem's shared list (stored own options ignored).
+      const sub = { ...(q as Record<string, unknown>), options: bundleStems.get(q.stemId) };
+      const r = checkQuestion(sub, path);
+      return r;
+    }
+    return checkQuestion(raw, path);
+  }
+
   const errors: string[] = [];
   let folderCount = 0;
   let questionCount = 0;
@@ -96,7 +128,7 @@ export async function POST(req: Request) {
     folderCount++;
     node.questions.forEach((qq, i) => {
       questionCount++;
-      const r = checkQuestion(qq, `${path} › Q${i + 1}`);
+      const r = checkLinked(qq, `${path} › Q${i + 1}`);
       if (!r.ok && r.error) errors.push(r.error);
     });
     node.folders.forEach((ff, i) => walk(ff as Partial<BundleFolder>, `${path} › ${typeof ff === "object" && ff ? String((ff as { name?: unknown }).name ?? `folder${i + 1}`) : `folder${i + 1}`}`, depth + 1));
@@ -106,12 +138,33 @@ export async function POST(req: Request) {
   if (questionCount > 500) errors.push("Too many questions (max 500)");
   if (errors.length) return NextResponse.json({ error: "Bundle invalid", issues: errors.slice(0, 20) }, { status: 422 });
 
-  // Create top folder, then recurse.
+  // Create top folder, then recurse: stems first (remap refs), then items.
   const top = (await db.folder.create({ data: { ownerId, name: b.name!.trim().slice(0, 80), parentId: parent } }) as unknown as { id: string });
   let created = 0;
+  const stemRemap = new Map<string, string>();
   async function build(node: BundleFolder, parentFid: string): Promise<void> {
     for (const qq of node.questions) {
+      if ((qq as { type?: string }).type !== "stem") continue;
       const v = checkQuestion(qq, "q").ok!;
+      const createdQ = (await db.question.create({
+        data: {
+          topicId: await resolveTopic(v.topicPath), type: v.type, stem: v.stem, normStem: norm(v.stem),
+          options: JSON.stringify(v.options), correct: JSON.stringify(v.correct),
+          parts: JSON.stringify(v.parts), explanation: v.explanation,
+          difficulty: bandFromIndex(v.difficultyIndex), difficultyIndex: v.difficultyIndex,
+          category: v.category, sector: v.sector, mediaUrl: v.mediaUrl,
+          tags: JSON.stringify(v.tags), creatorId: user!.id, folderId: parentFid,
+          marks: v.marks, stemId: null, inheritOptions: false,
+        },
+      }) as unknown as { id: string });
+      const ref = (qq as { ref?: string }).ref;
+      if (typeof ref === "string" && ref) stemRemap.set(ref, createdQ.id);
+      created++;
+    }
+    for (const qq of node.questions) {
+      if ((qq as { type?: string }).type === "stem") continue;
+      const v = checkLinked(qq, "q").ok!;
+      const srcRef = typeof (qq as { stemId?: string }).stemId === "string" ? (qq as { stemId: string }).stemId : "";
       const topicId = await resolveTopic(v.topicPath);
       await db.question.create({
         data: {
@@ -121,6 +174,9 @@ export async function POST(req: Request) {
           difficulty: bandFromIndex(v.difficultyIndex), difficultyIndex: v.difficultyIndex,
           category: v.category, sector: v.sector, mediaUrl: v.mediaUrl,
           tags: JSON.stringify(v.tags), creatorId: user!.id, folderId: parentFid,
+          marks: v.marks,
+          stemId: (srcRef && stemRemap.get(srcRef)) || null,
+          inheritOptions: !!v.inheritOptions && !!((srcRef && stemRemap.get(srcRef)) || null),
         },
       });
       created++;

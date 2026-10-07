@@ -24,6 +24,19 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (!a) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const c = await activityContributors(a);
   const modes = strArr(a.modes);
+  // My remaining exam attempts (null = untracked).
+  let attemptsLeft: number | null = null;
+  if (user && a.maxAttempts) {
+    const mine = (await db.quizAttempt.findMany({ where: { userId: user.id }, take: 200 }) as unknown as { mode: string; filter: string }[]);
+    let used = 0;
+    for (const m of mine) {
+      if (m.mode !== "exam") continue;
+      try {
+        if (JSON.parse(m.filter ?? "{}").activityId === a.id) used++;
+      } catch { /* ignore */ }
+    }
+    attemptsLeft = Math.max(0, (a.maxAttempts as number) - used);
+  }
   const meta = {
     id: a.id, ownerId: a.ownerId, title: a.title, banner: a.banner ?? "indigo",
     details: a.details ?? "",
@@ -32,6 +45,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     modes: modes.length ? modes : [...ACTIVITY_MODES],
     visibility: a.visibility ?? "private",
     category: a.category ?? "tertiary", sector: a.sector ?? "", subject: a.subject ?? "",
+    kind: a.kind ?? "quiz",
+    timeLimitMinutes: a.timeLimitMinutes ?? null,
+    maxAttempts: a.maxAttempts ?? null,
+    shuffle: a.shuffle ?? false,
+    showScore: a.showScore ?? "immediate",
+    resultsReleased: !!(a as { resultsReleased?: boolean }).resultsReleased,
+    availableFrom: a.availableFrom ?? null,
+    availableUntil: a.availableUntil ?? null,
+    attemptsLeft,
     ownerName: c.owner.name, contributors: c.others, questionCount: c.total,
     role: user ? await activityRole(user.id, a) : null,
   };
@@ -82,6 +104,40 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (body.visibility !== undefined) {
     if (role !== "owner") return NextResponse.json({ error: "Only the owner publishes" }, { status: 403 });
     data.visibility = body.visibility === "public" ? "public" : "private";
+  }
+  // Examiner controls (owner-only): nature, timing, schedule, attempts, scoring.
+  const EXAM_OWNER_KEYS = ["kind", "timeLimitMinutes", "maxAttempts", "shuffle", "showScore", "resultsReleased", "availableFrom", "availableUntil"] as const;
+  const wantsExamKeys = EXAM_OWNER_KEYS.some((k) => body[k] !== undefined);
+  if (wantsExamKeys && role !== "owner") return NextResponse.json({ error: "Only the owner sets exam controls" }, { status: 403 });
+  if (body.kind !== undefined) {
+    if (!["practice-set", "quiz", "mock", "exam"].includes(body.kind)) return NextResponse.json({ error: "Unknown activity kind" }, { status: 400 });
+    data.kind = body.kind;
+  }
+  if (body.timeLimitMinutes !== undefined) {
+    const v = body.timeLimitMinutes === null || body.timeLimitMinutes === "" ? null : Math.min(600, Math.max(1, Number(body.timeLimitMinutes) || 0));
+    if (body.timeLimitMinutes !== null && body.timeLimitMinutes !== "" && !v) return NextResponse.json({ error: "Bad time limit" }, { status: 400 });
+    data.timeLimitMinutes = v;
+  }
+  if (body.maxAttempts !== undefined) {
+    const v = body.maxAttempts === null || body.maxAttempts === "" ? null : Math.min(100, Math.max(1, Math.round(Number(body.maxAttempts) || 0)));
+    if (body.maxAttempts !== null && body.maxAttempts !== "" && !v) return NextResponse.json({ error: "Bad attempt limit" }, { status: 400 });
+    data.maxAttempts = v;
+  }
+  if (body.shuffle !== undefined) data.shuffle = !!body.shuffle;
+  if (body.showScore !== undefined) {
+    if (!["immediate", "hidden"].includes(body.showScore)) return NextResponse.json({ error: "Score must be immediate or hidden" }, { status: 400 });
+    data.showScore = body.showScore;
+  }
+  if (body.resultsReleased !== undefined) data.resultsReleased = !!body.resultsReleased;
+  for (const k of ["availableFrom", "availableUntil"] as const) {
+    if (body[k] !== undefined) {
+      if (body[k] === null || body[k] === "") data[k] = null;
+      else {
+        const t = new Date(body[k]).getTime();
+        if (isNaN(t)) return NextResponse.json({ error: "Bad schedule date" }, { status: 400 });
+        data[k] = new Date(t).toISOString();
+      }
+    }
   }
   if (body.category !== undefined) {
     if (!(CURRICULUM as readonly string[]).includes(String(body.category))) return NextResponse.json({ error: "Unknown category" }, { status: 400 });

@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const acts = (await db.activity.findMany({ where: { visibility: "public" }, take: 100, orderBy: { createdAt: "desc" } }) as unknown as {
     id: string; ownerId: string; title: string; banner?: string; details?: string; modes?: string; visibility?: string;
-    category?: string; sector?: string; subject?: string; createdAt?: string;
+    category?: string; sector?: string; subject?: string; kind?: string; createdAt?: string;
   }[]);
   const activities = [];
   for (const a of acts) {
@@ -19,6 +19,7 @@ export async function GET() {
       id: a.id, title: a.title, banner: a.banner ?? "indigo", details: a.details ?? "",
       modes: modes.length ? modes : ["practice", "selftest", "exam"],
       category: a.category ?? "tertiary", sector: a.sector ?? "", subject: a.subject ?? "",
+      kind: a.kind ?? "quiz",
       ownerName: c.owner.name, contributors: c.others, questionCount: c.total, createdAt: a.createdAt,
     });
   }

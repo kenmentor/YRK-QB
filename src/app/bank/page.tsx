@@ -12,6 +12,7 @@ import { downloadFolderZip, downloadQuestionFile } from "@/lib/transport";
 import { apiGet, apiSend } from "@/lib/api";
 import { useSession } from "@/lib/use-session";
 import { QuestionView } from "@/components/question-view";
+import { PageHero, EmptyState } from "@/components/page-hero";
 import { QuestionEditor, QForm } from "@/components/question-editor";
 import { Search, FolderPlus, FilePlus, ChevronRight, BookOpen, ArrowRight, ArrowLeft, ArrowUp, RefreshCw, Database, LayoutGrid, List, Share2, X, UserPlus, LogOut, Users, Upload, PanelLeft, MoreVertical } from "lucide-react";
 
@@ -27,7 +28,7 @@ function fromUrl(): { folder: string | null; owner: string | null } {
 }
 
 export default function BankPage() {
-  const [tab, setTab] = useState<"bank" | "explore">("bank");
+  const [tab, setTab] = useState<"bank" | "explore" | "submissions">("bank");
   const [folderId, setFolderId] = useState<string | null>(null);
   const [ownerId, setOwnerId] = useState<string | null>(null); // null = my bank
   const [tree, setTree] = useState<TreeFolder[]>([]);
@@ -140,6 +141,18 @@ export default function BankPage() {
     return files.filter((f) => (f.stem ?? "").toLowerCase().includes(q.toLowerCase()));
   }, [files, q]);
 
+  // Stems filed at this level, offered for linking.
+  const levelStems = useMemo(() => {
+    return files
+      .filter((f) => (f as { type?: string }).type === "stem")
+      .map((f) => {
+        const raw = f as { id: string; stem: string; options?: string };
+        let options: string[] = [];
+        try { const v = JSON.parse(raw.options ?? "[]"); if (Array.isArray(v)) options = v.map(String); } catch { /* keep empty */ }
+        return { id: raw.id, stem: raw.stem ?? "", options };
+      });
+  }, [files]);
+
   // Shared entries merged inline at my own root (emerald).
   const gridFolders: DriveFolderItem[] = useMemo(() => {
     if (folderId || sharedMode) return folders;
@@ -189,7 +202,7 @@ export default function BankPage() {
 
   async function saveEdit(f: QForm) {
     if (!viewId) return;
-    const r = await apiSend<unknown>(`/api/bank/${viewId}`, "PATCH", { stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl });
+    const r = await apiSend<unknown>(`/api/bank/${viewId}`, "PATCH", { stem: f.stem, options: f.options, correct: f.correct, parts: f.parts, explanation: f.explanation, difficulty: f.difficulty, difficultyIndex: f.difficultyIndex, category: f.category, sector: f.sector, tags: f.tags, mediaUrl: f.mediaUrl, stemId: f.stemId, inheritOptions: f.inheritOptions, marks: f.marks });
     if (!r.ok) { if (r.status) toast(r.error); return; }
     toast("Question updated.");
     setEditing(false); setViewQ(r.data);
@@ -369,6 +382,7 @@ export default function BankPage() {
         <div className="flex rounded-xl bg-slate-100 dark:bg-white/[0.07] p-1 text-[13px] font-semibold">
           <button onClick={() => setTab("bank")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "bank" ? "bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-900 dark:text-[var(--yrk-text-primary)] shadow-sm" : "text-slate-500 dark:text-[#9aa3b2]"}`}>My Bank</button>
           <button onClick={() => setTab("explore")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "explore" ? "bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-900 dark:text-[var(--yrk-text-primary)] shadow-sm" : "text-slate-500 dark:text-[#9aa3b2]"}`}>Explore</button>
+          <button onClick={() => setTab("submissions")} className={`rounded-lg px-3.5 py-1.5 transition ${tab === "submissions" ? "bg-white dark:bg-[var(--yrk-surface-elevated)] text-slate-900 dark:text-[var(--yrk-text-primary)] shadow-sm" : "text-slate-500 dark:text-[#9aa3b2]"}`}>Submissions</button>
         </div>
         {tab === "bank" && authLoaded && !me && <span className="text-[13px] text-slate-400 dark:text-[var(--yrk-text-tertiary)]"><a className="text-brand-600 underline" href="/login">Log in</a> to use your bank.</span>}
         {tab === "bank" && sharedMode && <Badge tone="in_review">Viewing {ownerName}&rsquo;s bank · {access}</Badge>}
@@ -376,6 +390,8 @@ export default function BankPage() {
 
       {tab === "explore" ? (
         <ExploreTab />
+      ) : tab === "submissions" ? (
+        <SubmissionsTab />
       ) : (
         <div className="grid items-start gap-4 lg:grid-cols-[260px_1fr]">
           {/* navigation pane */}
@@ -524,7 +540,7 @@ export default function BankPage() {
               <span className="text-sm font-semibold">New question in “{crumbs[crumbs.length - 1]?.name}”</span>
               <button onClick={() => setShowNewQ(false)} className="rounded-lg bg-white/10 p-1.5 hover:bg-white/20"><X className="h-4 w-4" /></button>
             </div>
-            <QuestionEditor topics={topics} submitLabel="File question" strict onSubmit={createQuestion} />
+            <QuestionEditor topics={topics} stems={levelStems} submitLabel="File question" strict onSubmit={createQuestion} />
           </div>
         </div>
       )}
@@ -543,8 +559,9 @@ export default function BankPage() {
               <button onClick={() => setEditing(false)} className="rounded-lg bg-white/10 p-1.5 hover:bg-white/20"><X className="h-4 w-4" /></button>
             </div>
             <QuestionEditor
-              initial={{ type: viewQ.type, stem: viewQ.stem, options: JSON.parse(viewQ.options || "[]"), correct: JSON.parse(viewQ.correct || "[]"), parts: (() => { try { return JSON.parse(viewQ.parts || "[]"); } catch { return []; } })(), explanation: viewQ.explanation, difficulty: viewQ.difficulty, difficultyIndex: viewQ.difficultyIndex ?? 3, category: viewQ.category ?? "tertiary", sector: viewQ.sector ?? "", tags: (() => { try { return JSON.parse(viewQ.tags || "[]"); } catch { return []; } })(), mediaUrl: viewQ.mediaUrl ?? "" }}
+              initial={{ type: viewQ.type, stem: viewQ.stem, options: JSON.parse(viewQ.options || "[]"), correct: JSON.parse(viewQ.correct || "[]"), parts: (() => { try { return JSON.parse(viewQ.parts || "[]"); } catch { return []; } })(), explanation: viewQ.explanation, difficulty: viewQ.difficulty, difficultyIndex: viewQ.difficultyIndex ?? 3, category: viewQ.category ?? "tertiary", sector: viewQ.sector ?? "", tags: (() => { try { return JSON.parse(viewQ.tags || "[]"); } catch { return []; } })(), mediaUrl: viewQ.mediaUrl ?? "", stemId: viewQ.stemId ?? "", inheritOptions: !!viewQ.inheritOptions, marks: viewQ.marks ?? null }}
               topics={topics}
+              stems={levelStems}
               submitLabel="Save changes"
               onSubmit={saveEdit}
             />
@@ -717,7 +734,123 @@ function RibbonIcon({ title, onClick, primary, className, children }: {
   );
 }
 
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {  return (
+// Submissions: compact group cards — tap through for the full detail
+// (present/absent, times, per-answer review). No nested expansion here.
+function SubmissionsTab() {
+  const [attempts, setAttempts] = useState<{ id: string; mode: string; score: number | null; total: number; marksEarned?: number | null; marksTotal?: number; withheld?: boolean; filter: string; createdAt: string }[]>([]);
+  const [titles, setTitles] = useState<Record<string, string>>({});
+  const [kinds, setKinds] = useState<Record<string, "activity" | "set">>({});
+  const [inbox, setInbox] = useState<{ activities: { id: string; title: string; role: string; submissions: number }[]; sets: { id: string; title: string; role: string; submissions: number }[] } | null>(null);
+
+  useEffect(() => {
+    apiGet<{ attempts: { id: string; mode: string; score: number | null; total: number; marksEarned?: number | null; marksTotal?: number; withheld?: boolean; filter: string; createdAt: string }[] }>("/api/quiz/attempts").then((r) => {
+      if (!r.ok || !Array.isArray(r.data?.attempts)) return;
+      setAttempts(r.data.attempts);
+      const acts = Array.from(new Set(r.data.attempts.map((a) => {
+        try { return JSON.parse(a.filter ?? "{}").activityId; } catch { return null; }
+      }).filter(Boolean))) as string[];
+      const sets = Array.from(new Set(r.data.attempts.map((a) => {
+        try { return JSON.parse(a.filter ?? "{}").setId; } catch { return null; }
+      }).filter(Boolean))) as string[];
+      Promise.all([
+        ...acts.map((id) => apiGet<{ meta: { title: string } }>(`/api/activities/${id}`).then((x) => ({ id, kind: "activity" as const, title: x.ok ? x.data?.meta.title ?? "Activity" : "Activity" }))),
+        ...sets.map((id) => apiGet<{ set: { title: string } }>(`/api/exam-sets/${id}`).then((x) => ({ id, kind: "set" as const, title: x.ok ? (x.data as { set?: { title: string } })?.set?.title ?? "Set" : "Set" }))),
+      ]).then((ts) => {
+        const m: Record<string, string> = {};
+        const k: Record<string, "activity" | "set"> = {};
+        for (const t of ts) { m[t.id] = t.title; k[t.id] = t.kind; }
+        setTitles(m);
+        setKinds(k);
+      });
+    });
+    apiGet<{ activities: { id: string; title: string; role: string; submissions: number }[]; sets: { id: string; title: string; role: string; submissions: number }[] }>("/api/submissions").then((r) => {
+      if (r.ok && r.data) setInbox(r.data);
+    });
+  }, []);
+
+  function groupOf(a: { filter: string }): string | null {
+    try {
+      const f = JSON.parse(a.filter ?? "{}");
+      return f.activityId ?? f.setId ?? null;
+    } catch { return null; }
+  }
+  const groups = useMemo(() => {
+    const m = new Map<string, { id: string | null; title: string; rows: { id: string; mode: string; score: number | null; total: number }[] }>();
+    for (const a of attempts) {
+      const gid = groupOf(a);
+      const key = gid ?? "quick";
+      const g = m.get(key);
+      if (g) g.rows.push(a);
+      else m.set(key, { id: gid, title: gid ? titles[gid] ?? "Activity" : "Quick rounds", rows: [a] });
+    }
+    const out: { id: string | null; title: string; rows: { id: string; mode: string; score: number | null; total: number }[] }[] = [];
+    m.forEach((g) => { out.push(g); });
+    return out;
+  }, [attempts, titles]);
+
+  function best(rows: { score: number | null; total: number }[]): string {
+    const done = rows.filter((r) => r.score != null && r.total > 0);
+    if (!done.length) return "—";
+    const b = Math.max(...done.map((r) => (r.score as number) / r.total));
+    return `${Math.round(b * 100)}% best`;
+  }
+
+  return (
+    <div className="grid gap-5">
+      <section className="grid gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400">My submissions · {attempts.length}</h2>
+        {groups.length ? groups.map((g) => (
+          <a key={g.id ?? "quick"} href={g.id ? `/submissions/${kinds[g.id] === "set" ? "set" : "activity"}/${g.id}` : "/play/history"}
+            className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-soft transition hover:shadow-lift dark:border-[var(--yrk-border-subtle)] dark:bg-[var(--yrk-surface-elevated)]">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-lg font-black text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+              {(g.title.trim().charAt(0) || "•").toUpperCase()}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-bold">{g.title}</span>
+              <span className="block truncate text-xs text-slate-400">{g.rows.length} round{g.rows.length === 1 ? "" : "s"} · {best(g.rows)}</span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" />
+          </a>
+        )) : <EmptyState title="No submissions yet" hint="Play anything and it lands here, grouped by activity." action={<a href="/play"><Button size="sm">Play now</Button></a>} />}
+      </section>
+
+      <section className="grid gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate-400">Examiner inbox</h2>
+        {!inbox ? (
+          <div className="grid gap-2">{[0, 1].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/[0.06]" />)}</div>
+        ) : (!inbox.activities.length && !inbox.sets.length) ? (
+          <EmptyState title="Nothing to review" hint="Submissions to your activities and sets gather here." />
+        ) : (
+          <>
+            {inbox.activities.map((a) => (
+              <a key={`a:${a.id}`} href={`/submissions/activity/${a.id}`}
+                className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-soft transition hover:shadow-lift dark:border-[var(--yrk-border-subtle)] dark:bg-[var(--yrk-surface-elevated)]">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold">{a.title}</span>
+                  <span className="block truncate text-xs text-slate-400">{a.submissions} submission{a.submissions === 1 ? "" : "s"}</span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" />
+              </a>
+            ))}
+            {inbox.sets.map((s) => (
+              <a key={`s:${s.id}`} href={`/submissions/set/${s.id}`}
+                className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-soft transition hover:shadow-lift dark:border-[var(--yrk-border-subtle)] dark:bg-[var(--yrk-surface-elevated)]">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-bold">{s.title} <span className="font-normal text-slate-400">· set</span></span>
+                  <span className="block truncate text-xs text-slate-400">{s.submissions} submission{s.submissions === 1 ? "" : "s"}</span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-300" />
+              </a>
+            ))}
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
     <div className="yrk-sheet fixed inset-0 z-40 grid place-items-center bg-slate-900/50 p-4" onClick={onClose}>
       <div className="grid w-full max-w-sm gap-3 rounded-3xl bg-white dark:bg-[var(--yrk-surface-elevated)] p-5 shadow-lift" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-2">

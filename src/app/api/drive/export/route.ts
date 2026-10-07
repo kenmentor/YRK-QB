@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 //   explanation, difficultyIndex, category, sector, tags, mediaUrl, topicPath }
 export interface BundleQuestion {
   format: "yrk-question/1";
+  ref?: string; // source id — lets imports remap stem links within a bundle
   type: string;
   stem: string;
   options: string[];
@@ -19,6 +20,9 @@ export interface BundleQuestion {
   parts: { stem?: string; label?: string; max?: number }[];
   explanation: string;
   difficultyIndex: number;
+  marks: number | null;
+  stemId: string;
+  inheritOptions: boolean;
   category: string;
   sector: string;
   tags: string[];
@@ -68,19 +72,22 @@ export async function GET(req: Request) {
     if (!f || f.ownerId !== root!.ownerId) return null;
     const kids = ((await db.folder.findMany({ where: { ownerId: f.ownerId, parentId: fid }, take: 200, orderBy: { createdAt: "asc" } }) as unknown as FolderDoc[])).filter(isBankFolder);
     const docs = ((await db.question.findMany({ where: { folderId: fid, mergedIntoId: null }, take: 500, orderBy: { createdAt: "asc" } }) as unknown as {
-      type: string; stem: string; options: string; correct: string; parts?: string; explanation: string;
+      id: string; type: string; stem: string; options: string; correct: string; parts?: string; explanation: string;
       difficultyIndex?: number; difficulty: string; category?: string; sector?: string; tags?: string; mediaUrl?: string; topicId?: string;
+      marks?: number | null; stemId?: string | null; inheritOptions?: boolean;
     }[])).filter(isBankQuestion);
     const questions: BundleQuestion[] = [];
     for (const qd of docs) {
       if (count++ > 500) break;
       questions.push({
         format: "yrk-question/1",
+        ref: qd.id,
         type: qd.type, stem: qd.stem,
         options: js<string[]>(qd.options, []), correct: js<string[]>(qd.correct, []),
         parts: js(qd.parts, []),
         explanation: qd.explanation,
         difficultyIndex: qd.difficultyIndex ?? (qd.difficulty === "easy" ? 2 : qd.difficulty === "hard" ? 4 : 3),
+        marks: qd.marks ?? null, stemId: qd.stemId ?? "", inheritOptions: !!qd.inheritOptions,
         category: qd.category ?? "tertiary", sector: qd.sector ?? "",
         tags: js<string[]>(qd.tags, []), mediaUrl: qd.mediaUrl ?? "",
         topicPath: await topicPath(qd.topicId),

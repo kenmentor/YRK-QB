@@ -5,14 +5,16 @@ import { Input, Textarea, Select } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Eye, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { suggestMarks } from "@/lib/lifecycle";
 
 export type QType =
   | "mcq" | "multi_select" | "true_false" | "mtf" | "sct"
   | "fill_in" | "saq" | "short_answer" | "essay" | "compound" | "meq"
   | "matching" | "emq" | "kfq"
-  | "osce" | "dops" | "minicex" | "msf" | "viva";
+  | "osce" | "dops" | "minicex" | "msf" | "viva"
+  | "stem";
 
-export type QStyle = "objective" | "written" | "matching" | "rubric";
+export type QStyle = "objective" | "written" | "matching" | "rubric" | "stimulus";
 
 export interface QPart { stem?: string; label?: string; max?: number; }
 
@@ -30,6 +32,9 @@ export interface QForm {
   tags: string[];
   mediaUrl: string;
   topicId: string;
+  stemId: string;
+  inheritOptions: boolean;
+  marks: number | null;
 }
 
 export const TYPE_LABEL: Record<QType, string> = {
@@ -52,6 +57,7 @@ export const TYPE_LABEL: Record<QType, string> = {
   minicex: "Mini-CEX Logbook",
   msf: "Multi-Source Feedback (MSF)",
   viva: "Viva / Oral (SOE)",
+  stem: "Shared stem (unscored)",
 };
 
 const GROUPS: Record<QStyle, { label: string; types: QType[] }> = {
@@ -59,6 +65,7 @@ const GROUPS: Record<QStyle, { label: string; types: QType[] }> = {
   written: { label: "Written", types: ["fill_in", "saq", "short_answer", "essay", "compound", "meq"] },
   matching: { label: "Matching", types: ["matching", "emq", "kfq"] },
   rubric: { label: "Clinical rubric", types: ["osce", "dops", "minicex", "msf", "viva"] },
+  stimulus: { label: "Stimulus", types: ["stem"] },
 };
 
 export const SCT_SCALE = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
@@ -66,6 +73,7 @@ export const SCT_SCALE = ["Strongly disagree", "Disagree", "Neutral", "Agree", "
 export function styleOf(type: string): QStyle {
   if (["osce", "dops", "minicex", "msf", "viva"].includes(type)) return "rubric";
   if (["matching", "emq", "kfq"].includes(type)) return "matching";
+  if (type === "stem") return "stimulus";
   if (["mcq", "multi_select", "true_false", "mtf", "sct"].includes(type)) return "objective";
   return "written";
 }
@@ -81,6 +89,10 @@ export function countGaps(stem: string): number {
 export function validateForm(f: QForm): string[] {
   const errs: string[] = [];
   if (f.stem.trim().length < 8) errs.push("Stem needs 8+ characters.");
+  if (f.type === "stem") {
+    if (f.correct.some((c) => c.trim())) errs.push("Stems never carry answers.");
+    return errs;
+  }
   if (f.type === "mcq") {
     if (f.options.filter((o) => o.trim()).length < 2) errs.push("MCQ needs at least 2 options.");
     if (f.correct.length !== 1) errs.push("MCQ needs exactly one correct answer.");
@@ -102,7 +114,7 @@ export function validateForm(f: QForm): string[] {
   if (f.type === "saq" && !f.correct.some((c) => c.trim())) errs.push("SAQ needs at least one accepted answer.");
   if ((f.type === "emq" || f.type === "matching")) {
     if (!f.parts.length) errs.push("Needs at least 1 sub-question.");
-    if (f.options.filter((o) => o.trim()).length < 2) errs.push("Needs a shared option list of at least 2.");
+    if (!(f.stemId && f.inheritOptions) && f.options.filter((o) => o.trim()).length < 2) errs.push("Needs a shared option list of at least 2.");
     if (f.correct.some((c) => !c.trim())) errs.push("Every sub-question needs a match.");
   }
   if (f.type === "kfq" || f.type === "meq" || f.type === "compound") {
@@ -124,20 +136,45 @@ function blankParts(n: number): QPart[] {
   return Array.from({ length: n }, () => ({ stem: "" }));
 }
 
-export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict }: {
+export function QuestionEditor({ initial, topics, stems = [], submitLabel, onSubmit, strict }: {
   initial?: Partial<QForm>;
   topics: { id: string; name: string; subject: string; exam: string }[];
+  stems?: { id: string; stem: string; options: string[] }[];
   submitLabel: string;
   onSubmit: (f: QForm) => void;
   strict?: boolean;
 }) {
-  const [type, setType] = useState<QType>((initial?.type as QType) ?? "mcq");
+  const initType = (initial?.type as QType) ?? "mcq";
+  const [type, setType] = useState<QType>(initType);
   const [stem, setStem] = useState(initial?.stem ?? "");
   const [options, setOptions] = useState<string[]>(initial?.options ?? ["", "", "", ""]);
   const [correct, setCorrect] = useState<string[]>(initial?.correct ?? []);
+  // Index-based selection for mcq / multi_select / true_false: ticks follow
+  // rows, never strings — immune to empty or duplicate option text.
+  const [correctIdx, setCorrectIdx] = useState<number | null>(() => {
+    const o = initial?.options ?? [];
+    const c = initial?.correct ?? [];
+    if (initType === "true_false") return c[0] === "False" ? 1 : c[0] === "True" ? 0 : null;
+    if (initType !== "mcq") return null;
+    const i = o.indexOf(c[0] ?? "");
+    return i >= 0 && (c[0] ?? "") !== "" ? i : null;
+  });
+  const [correctIdxs, setCorrectIdxs] = useState<number[]>(() => {
+    if (initType !== "multi_select") return [];
+    const o = initial?.options ?? [];
+    const out: number[] = [];
+    for (const v of initial?.correct ?? []) {
+      const i = o.indexOf(v);
+      if (i >= 0 && v !== "" && !out.includes(i)) out.push(i);
+    }
+    return out;
+  });
   const [parts, setParts] = useState<QPart[]>(initial?.parts ?? []);
   const [explanation, setExplanation] = useState(initial?.explanation ?? "");
   const [difficultyIndex, setDifficultyIndex] = useState(initial?.difficultyIndex ?? 3);
+  const [marks, setMarks] = useState<number | null>(initial?.marks ?? null);
+  const [stemId, setStemId] = useState(initial?.stemId ?? "");
+  const [inheritOptions, setInheritOptions] = useState(initial?.inheritOptions ?? false);
   const [category, setCategory] = useState(initial?.category ?? "tertiary");
   const [sector, setSector] = useState(initial?.sector ?? "");
   const [tagsStr, setTagsStr] = useState((initial?.tags ?? []).join(", "));
@@ -152,17 +189,24 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
   const stemRef = useRef<HTMLTextAreaElement>(null);
   const style = styleOf(type);
   const gaps = useMemo(() => countGaps(stem), [stem]);
+  const linkedStem = stems.find((s) => s.id === stemId) ?? null;
+  const showInherited = !!linkedStem && inheritOptions && type !== "stem";
+  const effCorrect = (type === "mcq" || type === "multi_select" || type === "true_false") && !showInherited ? derivedCorrect() : correct;
   const form: QForm = {
-    type, stem, options, correct, parts, explanation,
+    type, stem, options, correct: effCorrect, parts, explanation,
     difficultyIndex, difficulty: bandOf(difficultyIndex),
     category, sector, tags: tagsStr.split(",").map((t) => t.trim()).filter(Boolean),
-    mediaUrl, topicId,
+    mediaUrl, topicId, stemId, inheritOptions, marks,
   };
   const errors = validateForm(form);
+  const marksSuggestion = suggestMarks({ type, correct: effCorrect, parts, difficultyIndex });
 
   function applyType(t: QType) {
     setType(t);
-    if (t === "true_false") { setOptions(["True", "False"]); setCorrect((c) => (c.length ? c : ["True"])); setParts([]); }
+    if (t === "stem") { setCorrect([]); setParts([]); setCorrectIdx(null); setCorrectIdxs([]); }
+    else if (t === "true_false") { setOptions(["True", "False"]); setCorrectIdx((i) => i ?? 0); setParts([]); }
+    else if (t === "mcq") { setOptions((o) => (o.length ? o : ["", "", "", ""])); setCorrectIdx(null); setCorrectIdxs([]); setParts([]); }
+    else if (t === "multi_select") { setOptions((o) => (o.length ? o : ["", "", "", ""])); setCorrectIdx(null); setCorrectIdxs([]); setParts([]); }
     else if (t === "sct") { setOptions([...SCT_SCALE]); setCorrect((c) => (c.length ? c.slice(0, 1) : [])); setParts([]); }
     else if (t === "mtf") { setOptions([]); setParts((p) => (p.length >= 2 ? p : blankParts(2))); setCorrect((c) => { const n = Math.max(2, parts.length); const next = [...c]; while (next.length < n) next.push("True"); return next.slice(0, n); }); }
     else if (t === "emq" || t === "matching") {
@@ -178,8 +222,8 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
     }
     else if (t === "fill_in") { setOptions([]); setCorrect((c) => (c.length ? c : [""])); setParts([]); }
     else if (t === "saq") { setOptions([]); setParts([]); setCorrect((c) => (c.length ? c : [""])); }
-    else if (t === "essay" || t === "short_answer") { setOptions([]); setCorrect([]); setParts([]); }
-    else { setOptions((o) => (o.length ? o : ["", "", "", ""])); setCorrect([]); setParts([]); }
+    else if (t === "essay" || t === "short_answer") { setOptions([]); setCorrect([]); setCorrectIdx(null); setCorrectIdxs([]); setParts([]); }
+    else { setOptions((o) => (o.length ? o : ["", "", "", ""])); setCorrect([]); setCorrectIdx(null); setCorrectIdxs([]); setParts([]); }
   }
 
   function setPart(i: number, patch: Partial<QPart>) {
@@ -220,24 +264,51 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
     return next.slice(0, n);
   }
 
-  function toggleCorrect(o: string) {
-    if (type === "multi_select") {
-      setCorrect((c) => (c.includes(o) && o ? c.filter((x) => x !== o) : [...c, o]));
-    } else {
-      setCorrect(o ? [o] : []);
+  // Values derived from index selection for single/multi/true-false.
+  function derivedCorrect(): string[] {
+    if (type === "mcq") {
+      const v = correctIdx != null ? options[correctIdx] ?? "" : "";
+      return v.trim() ? [v.trim()] : [];
     }
+    if (type === "multi_select") {
+      return correctIdxs.map((i) => (options[i] ?? "").trim()).filter(Boolean);
+    }
+    if (type === "true_false") {
+      return correctIdx != null ? [["True", "False"][correctIdx]] : [];
+    }
+    return correct;
+  }
+
+  function toggleIdx(i: number) {
+    if (type === "multi_select") {
+      setCorrectIdxs((s) => (s.includes(i) ? s.filter((x) => x !== i) : [...s, i]));
+    } else {
+      setCorrectIdx((c) => (c === i ? null : i));
+    }
+  }
+
+  function toggleCorrectVal(o: string) {
+    setCorrect((c) => (c.includes(o) && o ? c.filter((x) => x !== o) : [...c, o]));
+  }
+
+  function removeOption(i: number) {
+    setOptions(options.filter((_, j) => j !== i));
+    setCorrectIdx((c) => (c == null || c < i ? c : c === i ? null : c - 1));
+    setCorrectIdxs((s) => s.filter((x) => x !== i).map((x) => (x > i ? x - 1 : x)));
   }
 
   function submit() {
     if (strict && errors.length) return; // invalid files never reach the bank
     const tags = tagsStr.split(",").map((t) => t.trim()).filter(Boolean);
+    const submittedCorrect = (type === "mcq" || type === "multi_select" || type === "true_false") && !showInherited ? derivedCorrect() : correct;
     onSubmit({
       type, stem,
       options: ["mcq", "multi_select", "emq", "matching"].includes(type) ? options.map((o) => o.trim()).filter(Boolean) : type === "true_false" ? ["True", "False"] : type === "sct" ? [...SCT_SCALE] : [],
-      correct: type === "fill_in" ? syncedCorrect().map((s) => s.trim()) : type === "saq" ? correct.map((s) => s.trim()).filter(Boolean) : correct,
+      correct: type === "fill_in" ? syncedCorrect().map((s) => s.trim()) : type === "saq" ? correct.map((s) => s.trim()).filter(Boolean) : submittedCorrect,
       parts: ["mtf", "emq", "matching", "kfq", "meq", "compound", "osce", "dops", "minicex", "msf", "viva"].includes(type) ? parts : [],
       explanation, difficultyIndex, difficulty: bandOf(difficultyIndex),
       category, sector: sector.trim(), tags, mediaUrl: mediaUrl.trim(), topicId,
+      stemId: type === "stem" ? "" : stemId, inheritOptions: showInherited, marks,
     });
   }
 
@@ -273,9 +344,20 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
             <span className="ml-auto flex items-center gap-1" title={`Difficulty ${difficultyIndex}/5 (${bandOf(difficultyIndex)})`}>
               {[1, 2, 3, 4, 5].map((i) => (
                 <button key={i} onClick={() => setDifficultyIndex(i)}
-                  className={cn("h-6 w-6 rounded-md text-xs font-bold transition", i <= difficultyIndex ? "bg-brand-600 text-white" : "bg-slate-100 dark:bg-white/[0.07] text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-200 dark:bg-white/10")}>{i}</button>
+                  className={cn("h-6 w-6 rounded-md text-xs font-bold transition", i <= difficultyIndex ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-400 hover:bg-slate-200 dark:bg-white/[0.07]")}>{i}</button>
               ))}
             </span>
+            {type !== "stem" && (
+              <span className="flex items-center gap-1.5" title="Marks: auto suggestion, type to pin irregular marks">
+                <span className="text-xs text-slate-400">Marks</span>
+                <Input type="number" min={0} max={1000} value={marks ?? ""} placeholder={`Auto ${marksSuggestion}`}
+                  onChange={(e) => setMarks(e.target.value === "" ? null : Math.max(0, Math.min(1000, Number(e.target.value) || 0)))}
+                  className="h-7 w-[76px] px-2 text-xs" />
+                {marks != null && (
+                  <button title="Back to auto" onClick={() => setMarks(null)} className="rounded-md px-1 text-xs text-slate-400 hover:text-slate-700">auto</button>
+                )}
+              </span>
+            )}
           </div>
 
           <Textarea ref={stemRef} rows={3} placeholder={type === "fill_in" ? "e.g. Cardiac output = ___ × ___." : isRubric ? "e.g. Station 3: examine the cardiovascular system in 8 minutes." : "Question stem…"} value={stem} onChange={(e) => setStem(e.target.value)} />
@@ -286,30 +368,76 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
             </div>
           )}
 
-          {["mcq", "multi_select"].includes(type) && (
+          {["mcq", "multi_select"].includes(type) && !showInherited && (
             <div className="grid gap-1.5">
-              {options.map((o, i) => (
-                <div key={i} className="flex min-w-0 items-center gap-2">
-                  <button onClick={() => toggleCorrect(o)} title="Mark correct"
+              <span className="yrk-label">Options — tick the correct {type === "multi_select" ? "(several)" : "(one)"}</span>
+              {options.map((o, i) => {
+                const on = type === "multi_select" ? correctIdxs.includes(i) : correctIdx === i;
+                return (
+                  <div key={i} className="flex min-w-0 items-center gap-2">
+                    <button onClick={() => toggleIdx(i)} title="Mark correct"
+                      className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition", on ? "border-emerald-600 bg-emerald-500 text-white" : "border-slate-300 dark:border-[var(--yrk-border-default)] text-transparent hover:border-emerald-500")}>✓</button>
+                    <Input placeholder={`Option ${i + 1}`} value={o} onChange={(e) => {
+                      const next = [...options]; next[i] = e.target.value; setOptions(next);
+                    }} />
+                    {options.length > 2 && <Button size="icon" variant="ghost" onClick={() => removeOption(i)}><Trash2 className="h-4 w-4" /></Button>}
+                  </div>
+                );
+              })}
+              <Button size="sm" variant="outline" className="w-fit" onClick={() => setOptions([...options, ""])}><Plus className="h-3.5 w-3.5" /> Option</Button>
+            </div>
+          )}
+
+          {["mcq", "multi_select"].includes(type) && showInherited && linkedStem && (
+            <div className="grid gap-1.5">
+              <span className="yrk-label">Options inherited from stem — tick the correct {type === "multi_select" ? "(several)" : "(one)"}</span>
+              {linkedStem.options.map((o) => (
+                <div key={o} className="flex min-w-0 items-center gap-2">
+                  <button onClick={() => toggleCorrectVal(o)} title="Mark correct"
                     className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold transition", o && correct.includes(o) ? "border-emerald-600 bg-emerald-500 text-white" : "border-slate-300 dark:border-[var(--yrk-border-default)] text-transparent hover:border-emerald-500")}>✓</button>
-                  <Input placeholder={`Option ${i + 1}`} value={o} onChange={(e) => {
-                    const next = [...options]; next[i] = e.target.value;
-                    const old = options[i];
-                    setOptions(next);
-                    setCorrect((c) => c.map((x) => (x === old ? e.target.value : x)));
-                  }} />
-                  {options.length > 2 && <Button size="icon" variant="ghost" onClick={() => { setOptions(options.filter((_, j) => j !== i)); setCorrect(correct.filter((x) => x !== o)); }}><Trash2 className="h-4 w-4" /></Button>}
+                  <div className="min-w-0 flex-1 truncate rounded-xl border border-slate-200 dark:border-[var(--yrk-border-subtle)] px-3 py-2 text-sm">{o}</div>
                 </div>
               ))}
-              <Button size="sm" variant="outline" className="w-fit" onClick={() => setOptions([...options, ""])}><Plus className="h-3.5 w-3.5" /> Option</Button>
             </div>
           )}
 
           {type === "true_false" && (
             <div className="flex gap-2">
-              {["True", "False"].map((o) => (
-                <Button key={o} variant={correct.includes(o) ? "default" : "outline"} onClick={() => setCorrect([o])}>{o}</Button>
+              {["True", "False"].map((o, i) => (
+                <Button key={o} variant={correctIdx === i ? "default" : "outline"} onClick={() => setCorrectIdx(i)}>{o}</Button>
               ))}
+            </div>
+          )}
+
+          {type === "stem" && (
+            <div className="grid gap-2">
+              <div className="rounded-xl bg-brand-50 px-3 py-2 text-[13px] text-brand-800 dark:bg-brand-500/10 dark:text-brand-300">Stimulus — shown above its items, never scored, no answers needed.</div>
+              <span className="yrk-label">Shared options (optional — items can inherit these)</span>
+              {options.map((o, i) => (
+                <div key={i} className="flex min-w-0 items-center gap-2">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs font-black text-slate-500 dark:bg-white/[0.07]">{String.fromCharCode(65 + i)}</span>
+                  <Input placeholder={`Option ${String.fromCharCode(65 + i)}`} value={o} onChange={(e) => { const next = [...options]; next[i] = e.target.value; setOptions(next); }} />
+                  {options.length > 1 && <Button size="icon" variant="ghost" onClick={() => setOptions(options.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" /></Button>}
+                </div>
+              ))}
+              <Button size="sm" variant="outline" className="w-fit" onClick={() => setOptions([...options, ""])}><Plus className="h-3.5 w-3.5" /> Shared option</Button>
+            </div>
+          )}
+
+          {type !== "stem" && stems.length > 0 && (
+            <div className="grid gap-2 rounded-2xl border border-slate-100 p-3 dark:border-[var(--yrk-border-subtle)]">
+              <span className="yrk-label">Attach to a stem (optional)</span>
+              <Select value={stemId} onChange={(e) => { setStemId(e.target.value); if (!e.target.value) setInheritOptions(false); }}>
+                <option value="">Standalone question</option>
+                {stems.map((s) => <option key={s.id} value={s.id}>{s.stem.slice(0, 60)}</option>)}
+              </Select>
+              {!!stemId && (
+                <label className="flex cursor-pointer items-center gap-2 text-[13px]">
+                  <button onClick={() => setInheritOptions((v) => !v)}
+                    className={cn("flex h-5 w-5 items-center justify-center rounded-md border text-xs font-bold transition", inheritOptions ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 text-transparent")}>✓</button>
+                  Use the stem&apos;s options ({linkedStem?.options.length ?? 0}) instead of my own
+                </label>
+              )}
             </div>
           )}
 
@@ -348,13 +476,16 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
                   </div>
                   <Select value={correct[i] ?? ""} onChange={(e) => setCorrect((c) => { const n = [...c]; n[i] = e.target.value; return n; })}>
                     <option value="">Match to…</option>
-                    {options.filter((o) => o.trim()).map((o) => <option key={o} value={o}>{o}</option>)}
+                    {(showInherited && linkedStem ? linkedStem.options : options).filter((o) => o.trim()).map((o) => <option key={o} value={o}>{o}</option>)}
                   </Select>
                 </div>
               ))}
               <div className="flex flex-wrap gap-1.5">
                 <Button size="sm" variant="outline" onClick={addPart}><Plus className="h-3.5 w-3.5" /> Sub-question</Button>
               </div>
+              {showInherited && linkedStem ? (
+                <div className="rounded-xl bg-brand-50 px-3 py-2 text-[13px] text-brand-800 dark:bg-brand-500/10 dark:text-brand-300">Using the stem&apos;s {linkedStem.options.length} shared options.</div>
+              ) : (
               <div className="grid gap-1.5">
                 {options.map((o, i) => (
                   <div key={i} className="flex min-w-0 items-center gap-2">
@@ -364,6 +495,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
                 ))}
                 <Button size="sm" variant="outline" className="w-fit" onClick={() => setOptions([...options, ""])}><Plus className="h-3.5 w-3.5" /> Shared option</Button>
               </div>
+              )}
             </div>
           )}
 
@@ -470,8 +602,11 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
       <Card className={cn("h-fit lg:sticky lg:top-20", mobilePane === "preview" ? "yrk-fade" : "hidden lg:block")}><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm"><Eye className="h-4 w-4 text-brand-600" /> Preview</CardTitle><CardDescription>How it reads in play.</CardDescription></CardHeader>
         <CardContent className="grid gap-2 text-sm">
           <div className="font-medium leading-snug break-words">{stem || <span className="text-slate-400 dark:text-[var(--yrk-text-tertiary)]">Stem appears here…</span>}</div>
-          {["mcq", "multi_select"].includes(type) && options.filter((o) => o.trim()).map((o) => (
-            <div key={o} className={cn("rounded-lg border px-3 py-2", correct.includes(o) ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950" : "border-slate-200 dark:border-[var(--yrk-border-subtle)]")}>{o}</div>
+          {type === "stem" && (
+            <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">Stimulus · {options.filter((o) => o.trim()).length} shared options · never scored</div>
+          )}
+          {["mcq", "multi_select"].includes(type) && (showInherited && linkedStem ? linkedStem.options.filter((o) => o.trim()) : options.filter((o) => o.trim())).map((o) => (
+            <div key={o} className={cn("rounded-lg border px-3 py-2", effCorrect.includes(o) ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-950" : "border-slate-200 dark:border-[var(--yrk-border-subtle)]")}>{o}</div>
           ))}
           {type === "mtf" && parts.map((p, i) => (
             <div key={i} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-[var(--yrk-border-subtle)] px-3 py-1.5 text-[13px]"><span className="min-w-0 truncate">{p.stem || `Statement ${i + 1}`}</span><span className="shrink-0 font-bold text-emerald-700 dark:text-emerald-300">{correct[i] ?? "True"}</span></div>
@@ -483,7 +618,7 @@ export function QuestionEditor({ initial, topics, submitLabel, onSubmit, strict 
           {type === "fill_in" && <div className="text-slate-500 dark:text-[#9aa3b2]">{gaps} blank{gaps === 1 ? "" : "s"}</div>}
           {type === "saq" && <div className="text-slate-500 dark:text-[#9aa3b2]">Accepts: {correct.filter(Boolean).join(" / ") || "—"}</div>}
           {isRubric && <div className="text-[13px] text-slate-500 dark:text-[#9aa3b2]">{parts.length} criteria · {rubricTotal} marks</div>}
-          <div className="flex flex-wrap gap-1.5"><Badge tone="draft">{TYPE_LABEL[type]}</Badge><Badge tone={bandOf(difficultyIndex)}>{difficultyIndex}/5</Badge></div>
+          <div className="flex flex-wrap gap-1.5"><Badge tone="draft">{TYPE_LABEL[type]}</Badge><Badge tone={bandOf(difficultyIndex)}>{difficultyIndex}/5</Badge><Badge tone="draft">{marks ?? marksSuggestion} marks{marks == null ? " · auto" : ""}</Badge>{stemId ? <Badge tone="approved">linked stem</Badge> : null}</div>
         </CardContent>
       </Card>
     </div>

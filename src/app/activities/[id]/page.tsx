@@ -9,13 +9,13 @@ import { Banner, BANNERS, BANNER_STYLES } from "@/components/activity-banner";
 import { ContentExplorer, type PickedRef } from "@/components/content-explorer";
 import { QuestionEditor, type QForm } from "@/components/question-editor";
 import { toast } from "@/components/ui/toast";
-import { ArrowUp, ArrowDown, X, Eye, FilePlus, ChevronDown, ChevronRight, LayoutList, Palette, ScrollText, Users, FolderPlus, Folder, Rocket, UserPlus, Trash2 } from "lucide-react";
+import { ArrowUp, ArrowDown, X, Eye, FilePlus, ChevronDown, ChevronRight, LayoutList, Palette, ScrollText, Users, FolderPlus, Folder, Rocket, UserPlus, Trash2, Timer } from "lucide-react";
 import { fileIcon, typeLabel } from "@/components/drive-grid";
 import { cn } from "@/lib/utils";
 
 interface Q { id: string; stem: string; type: string; difficulty: string; }
 interface AsmRef { kind: "q" | "f"; id: string; }
-interface Meta { id: string; title: string; banner: string; details: string; rulesPractice: string; rulesTest: string; modes: string[]; visibility: string; category: string; sector: string; subject: string; role: string | null; }
+interface Meta { id: string; title: string; banner: string; details: string; rulesPractice: string; rulesTest: string; modes: string[]; visibility: string; category: string; sector: string; subject: string; kind: string; timeLimitMinutes?: number | null; maxAttempts?: number | null; shuffle?: boolean; showScore?: string; resultsReleased?: boolean; availableFrom?: string | null; availableUntil?: string | null; role: string | null; }
 interface ShareRow { id: string; userId: string; role: string; user: { name: string; email: string } | null; }
 
 const MODES = [{ v: "practice", l: "Practice" }, { v: "selftest", l: "Self test" }, { v: "exam", l: "Test" }];
@@ -24,8 +24,17 @@ const TABS = [
   { v: "content", l: "Content", icon: LayoutList },
   { v: "present", l: "Presentation", icon: Palette },
   { v: "rules", l: "Rules", icon: ScrollText },
+  { v: "exam", l: "Exam", icon: Timer },
   { v: "people", l: "People", icon: Users },
 ] as const;
+
+function toLocalInput(iso?: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 export default function ActivityBuilder({ params }: { params: { id: string } }) {
   const [tab, setTab] = useState<string>("content");
@@ -43,6 +52,19 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("viewer");
   const [shares, setShares] = useState<ShareRow[]>([]);
+  // Stems already linked here, offered for attaching items.
+  const linkedStems = assembly
+    .map((r) => (r.kind === "f" ? null : cache[r.id]))
+    .filter((q): q is Q => !!q && (q as { type?: string }).type === "stem")
+    .map((q) => {
+      const raw = q as unknown as { id: string; stem: string; options?: string };
+      let options: string[] = [];
+      try {
+        const v = JSON.parse(raw.options ?? "[]");
+        if (Array.isArray(v)) options = v.map(String);
+      } catch { /* keep empty */ }
+      return { id: raw.id, stem: raw.stem ?? "", options };
+    });
 
   useEffect(() => {
     fetch(`/api/activities/${params.id}`).then(async (r) => {
@@ -91,6 +113,11 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
     const body: Record<string, unknown> = {
       title: meta.title, banner: meta.banner, details: meta.details,
       category: meta.category, sector: meta.sector, subject: meta.subject,
+      kind: meta.kind,
+      timeLimitMinutes: meta.timeLimitMinutes ?? null,
+      maxAttempts: meta.maxAttempts ?? null,
+      shuffle: !!meta.shuffle,
+      showScore: meta.showScore ?? "immediate",
       modes: meta.modes, rulesPractice: meta.rulesPractice, rulesTest: meta.rulesTest,
       assembly,
     };
@@ -287,6 +314,55 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
         </Card>
       )}
 
+      {tab === "exam" && (
+        <Card className="mx-auto w-full max-w-2xl"><CardHeader><CardTitle className="text-sm">Exam controls</CardTitle><CardDescription>Standard test options. Staged — goes live on Publish.</CardDescription></CardHeader>
+          <CardContent className="grid gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="yrk-label">Nature
+                <Select value={meta.kind} onChange={(e) => touchMeta({ kind: e.target.value })}>
+                  <option value="practice-set">Practice set</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="mock">Mock</option>
+                  <option value="exam">Exam</option>
+                </Select>
+              </label>
+              <label className="yrk-label">Score visibility
+                <Select value={meta.showScore ?? "immediate"} onChange={(e) => touchMeta({ showScore: e.target.value })}>
+                  <option value="immediate">Immediate — exact score at end</option>
+                  <option value="hidden">Hidden — released on demand</option>
+                </Select>
+              </label>
+              <label className="yrk-label">Test clock (minutes, blank = candidate picks)
+                <Input type="number" min={1} max={600} placeholder="e.g. 30" value={meta.timeLimitMinutes ?? ""} onChange={(e) => touchMeta({ timeLimitMinutes: e.target.value === "" ? null : Number(e.target.value) })} />
+              </label>
+              <label className="yrk-label">Max attempts (blank = unlimited)
+                <Input type="number" min={1} max={100} placeholder="e.g. 2" value={meta.maxAttempts ?? ""} onChange={(e) => touchMeta({ maxAttempts: e.target.value === "" ? null : Number(e.target.value) })} />
+              </label>
+              <label className="yrk-label">Available from
+                <Input type="datetime-local" value={toLocalInput(meta.availableFrom)} onChange={(e) => touchMeta({ availableFrom: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              </label>
+              <label className="yrk-label">Available until
+                <Input type="datetime-local" value={toLocalInput(meta.availableUntil)} onChange={(e) => touchMeta({ availableUntil: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              </label>
+            </div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <button onClick={() => touchMeta({ shuffle: !meta.shuffle })}
+                className={cn("flex h-5 w-5 items-center justify-center rounded-md border text-xs font-bold transition", meta.shuffle ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 text-transparent")}>✓</button>
+              Shuffle question order in strict runs
+            </label>
+            {isOwner && meta.showScore === "hidden" && (
+              <Button variant="outline" className="w-fit" onClick={async () => {
+                const r = await fetch(`/api/activities/${params.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resultsReleased: true }) });
+                if (!r.ok) { toast((await r.json()).error); return; }
+                setMeta({ ...meta, resultsReleased: true });
+                toast("Scores released — candidates can see them now.");
+              }}>Release withheld scores</Button>
+            )}
+            {meta.resultsReleased && meta.showScore === "hidden" && <div className="text-[13px] text-emerald-700">Released — scores visible.</div>}
+          </CardContent>
+        </Card>
+      )}
+
       {tab === "rules" && (
         <Card className="mx-auto w-full max-w-2xl"><CardHeader><CardTitle className="text-sm">Rules candidates accept</CardTitle><CardDescription>Staged — goes live on Publish.</CardDescription></CardHeader>
           <CardContent className="grid gap-3">
@@ -350,7 +426,7 @@ export default function ActivityBuilder({ params }: { params: { id: string } }) 
               <span className="text-sm font-semibold">New question — files to your bank root and links here</span>
               <button onClick={() => setShowNewQ(false)} className="rounded-lg bg-white/10 p-1.5 hover:bg-white/20"><X className="h-4 w-4" /></button>
             </div>
-            <QuestionEditor topics={topics} submitLabel="Create & link" strict onSubmit={createInline} />
+            <QuestionEditor topics={topics} stems={linkedStems} submitLabel="Create & link" strict onSubmit={createInline} />
           </div>
         </div>
       )}
@@ -362,7 +438,7 @@ function StepBtn({ disabled, title, onClick, children }: { disabled?: boolean; t
   return <button className="rounded-md p-2 text-slate-400 dark:text-[var(--yrk-text-tertiary)] hover:bg-slate-100 dark:hover:bg-white/[0.07] disabled:opacity-30 sm:p-1.5" disabled={disabled} title={title} onClick={onClick}>{children}</button>;
 }
 
-const STEP_ORDER = ["content", "present", "rules", "people"];
+const STEP_ORDER = ["content", "present", "rules", "exam", "people"];
 
 // Procedural but free: Back/Next walk the steps, every step stays clickable,
 // Publish stays hero-wide — nothing is ever locked.

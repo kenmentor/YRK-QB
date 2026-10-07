@@ -363,4 +363,63 @@ describe("6.2 role denials, conflicts, alias integrity", () => {
     const grid = read("src/components/drive-grid.tsx");
     assert.ok(!grid.includes("9500"), "no shade corruption");
   });
+  it("integrity-stem-scoring: guard, stems, marks, radios", () => {
+    const v = read("src/lib/validation.ts");
+    assert.ok(v.includes('"stem"'), "stem type present");
+    assert.ok(v.includes("stemId") && v.includes("inheritOptions") && v.includes("marks"), "link + marks fields present");
+    const g = read("src/lib/lifecycle.ts");
+    assert.ok(g.includes("suggestMarks") && g.includes("rubricOk"), "smart scoring helpers present");
+    assert.ok(g.includes("stem") && g.includes("never score"), "stems unscored");
+    const ed = read("src/components/question-editor.tsx");
+    assert.ok(ed.includes("correctIdx"), "index-based radios present");
+    assert.ok(ed.includes("marksSuggestion"), "marks suggestion present");
+    assert.ok(ed.includes("Attach to a stem"), "stem linking present");
+    const play = read("src/app/play/page.tsx");
+    assert.ok(play.includes("awayRef") && play.includes("violations"), "focus guard present");
+    assert.ok(play.includes("splitStems") && play.includes("linkedStem"), "stem grouping present");
+    assert.ok(play.includes("marksTotal"), "marks results present");
+    const at = read("src/app/api/quiz/attempts/route.ts");
+    assert.ok(at.includes("violations") && at.includes("marksEarned"), "attempt integrity + marks stored");
+    const st = read("src/app/api/quiz/start/route.ts");
+    assert.ok(st.includes("packageItems") && st.includes("stems"), "stem-aware tickets present");
+    const im = read("src/app/api/drive/import/route.ts");
+    assert.ok(im.includes("stemRemap"), "stem ID remap present");
+    const bk = read("src/app/api/bank/[id]/route.ts");
+    assert.ok(bk.includes("inheritOptions"), "bank carries link fields");
+  });
+  it("submissions + exam controls: inbox, caps, schedule, hidden scores", () => {
+    for (const f of ["src/app/api/submissions/route.ts"]) {
+      assert.ok(fs.existsSync(path.join(root, f)), `missing ${f}`);
+    }
+    const at = read("src/app/api/quiz/attempts/route.ts");
+    assert.ok(at.includes("activityId"), "attempts carry activity context");
+    assert.ok(at.includes("maxAttempts") || at.includes("No attempts left"), "attempt caps enforced");
+    assert.ok(at.includes("withheld"), "hidden scoring present");
+    const st = read("src/app/api/quiz/start/route.ts");
+    assert.ok(st.includes("availableFrom") || st.includes("Opens"), "schedule window enforced");
+    assert.ok(st.includes("shuffle(resolved)") || st.includes("a.shuffle"), "examiner shuffle present");
+    const bk = read("src/app/bank/page.tsx");
+    assert.ok(bk.includes("SubmissionsTab"), "submissions tab present");
+    const b = read("src/app/activities/[id]/page.tsx");
+    assert.ok(b.includes("timeLimitMinutes") && b.includes("maxAttempts"), "exam controls present");
+    assert.ok(b.includes("resultsReleased") || b.includes("Release withheld"), "release flow present");
+    const play = read("src/app/play/page.tsx");
+    assert.ok(play.includes("Withheld by examiner") || play.includes("withheld"), "withheld results present");
+    const h = read("src/app/play/history/page.tsx");
+    assert.ok(h.includes("Withheld"), "history masking present");
+  });
+  it("submissions detail + exam controls: drill-down, schedule, caps", () => {
+    assert.ok(fs.existsSync(path.join(root, "src/app/submissions/[kind]/[id]/page.tsx")), "detail page present");
+    const d = read("src/app/submissions/[kind]/[id]/page.tsx");
+    assert.ok(d.includes("notSubmitted") && d.includes("avgTookSecs") || d.includes("avgScore"), "present/absent + stats present");
+    const s = read("src/app/api/submissions/route.ts");
+    assert.ok(s.includes("notSubmitted"), "absent list present");
+    const b = read("src/app/activities/[id]/page.tsx");
+    assert.ok(b.includes("availableFrom") && b.includes("maxAttempts"), "schedule + caps present");
+    assert.ok(b.includes("showScore") && b.includes("resultsReleased"), "score control present");
+    const play = read("src/app/play/page.tsx");
+    assert.ok(play.includes("effMinutes"), "fixed clock honored");
+    const at = read("src/app/api/quiz/attempts/route.ts");
+    assert.ok(at.includes("tookSecs"), "time-taken stored");
+  });
 });

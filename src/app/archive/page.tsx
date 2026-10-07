@@ -10,7 +10,7 @@ import { NewActivityButton } from "@/components/new-activity-button";
 import { useSession } from "@/lib/use-session";
 import { Search, Folder, ArrowRight, Globe } from "lucide-react";
 
-interface Activity { id: string; title: string; banner: string; details: string; modes: string[]; ownerName: string; contributors: { id: string; name: string }[]; questionCount: number; category: string; sector: string; }
+interface Activity { id: string; title: string; banner: string; details: string; modes: string[]; ownerName: string; contributors: { id: string; name: string }[]; questionCount: number; category: string; sector: string; kind?: string; }
 interface PubFolder { id: string; name: string; ownerId: string; ownerName: string; publicAccess: string; questionCount: number; category: string; sector: string; }
 
 const LADDER = ["primary", "secondary", "tertiary", "professional", "other"];
@@ -86,6 +86,7 @@ export default function ArchivePage() {
                     {a.details && <div className="line-clamp-2 text-sm text-slate-500 dark:text-[#9aa3b2]">{a.details}</div>}
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Badge>{a.questionCount} Qs</Badge>
+                      {a.kind && a.kind !== "quiz" && <Badge tone="approved" className="capitalize">{a.kind.replace("-", " ")}</Badge>}
                       <Badge tone="draft">{LADDER_LABEL[a.category ?? "tertiary"] ?? a.category}{a.sector ? ` · ${a.sector}` : ""}</Badge>
                       {a.modes.map((m) => <Badge key={m} tone="draft">{m === "exam" ? "Test" : m === "selftest" ? "Self test" : "Practice"}</Badge>)}
                       <a href={`/archive/${a.id}`} className="ml-auto"><Button size="sm" variant="secondary">Open <ArrowRight className="h-3.5 w-3.5" /></Button></a>

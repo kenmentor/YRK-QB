@@ -27,7 +27,8 @@ export default function CommitsPage() {
         type: string; stem: string; options: string[]; correct: string[];
         parts?: { stem?: string; label?: string; max?: number }[];
         explanation: string; difficulty: string; difficultyIndex?: number;
-        category?: string; sector?: string; tags?: string[]; mediaUrl?: string; topicId: string;
+        category?: string; sector?: string; tags?: string[]; mediaUrl?: string;
+        stemId?: string; inheritOptions?: boolean; marks?: number | null; topicId: string;
       };
     } catch { return null; }
   }
@@ -70,7 +71,7 @@ export default function CommitsPage() {
                   return (<>
                     <Textarea placeholder="Note for the admin…" value={note} onChange={(e) => setNote(e.target.value)} />
                     <QuestionEditor key={c.id} topics={topics.filter((t) => t.subject === c.subjectName)} submitLabel="Save changes"
-                      initial={{ type: p.type as QForm["type"], stem: p.stem, options: p.options, correct: p.correct, parts: p.parts ?? [], explanation: p.explanation, difficulty: p.difficulty, difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "", tags: p.tags ?? [], mediaUrl: p.mediaUrl ?? "", topicId: p.topicId ?? "" }}
+                      initial={{ type: p.type as QForm["type"], stem: p.stem, options: p.options, correct: p.correct, parts: p.parts ?? [], explanation: p.explanation, difficulty: p.difficulty, difficultyIndex: p.difficultyIndex ?? 3, category: p.category ?? "tertiary", sector: p.sector ?? "", tags: p.tags ?? [], mediaUrl: p.mediaUrl ?? "", stemId: p.stemId ?? "", inheritOptions: !!p.inheritOptions, marks: p.marks ?? null, topicId: p.topicId ?? "" }}
                       onSubmit={(f) => save(c.id, f)} />
                     <div className="flex gap-2"><Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
                     <Button variant="ghost" size="sm" className="text-red-600" onClick={() => withdraw(c.id)}>Withdraw</Button></div>

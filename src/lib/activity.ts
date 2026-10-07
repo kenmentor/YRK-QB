@@ -31,6 +31,14 @@ export interface ActivityDoc {
   category?: string;
   sector?: string;
   subject?: string;
+  kind?: string;
+  timeLimitMinutes?: number | null;
+  maxAttempts?: number | null;
+  shuffle?: boolean;
+  showScore?: string;
+  resultsReleased?: boolean;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
   assembly?: string;
   questionIds?: string;
   folderIds?: string;

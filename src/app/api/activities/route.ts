@@ -30,7 +30,7 @@ export async function GET(req: Request) {
   return NextResponse.json(await withMeta(pub.filter((a) => a.ownerId !== user.id)));
 }
 
-interface MetaDoc { id: string; ownerId: string; title: string; banner?: string; details?: string; modes?: string[] | string; visibility?: string; category?: string; sector?: string; subject?: string; createdAt?: string; }
+interface MetaDoc { id: string; ownerId: string; title: string; banner?: string; details?: string; modes?: string[] | string; visibility?: string; category?: string; sector?: string; subject?: string; kind?: string; createdAt?: string; }
 
 async function meta(a: MetaDoc) {
   const c = await activityContributors(a as unknown as Parameters<typeof activityContributors>[0]);
@@ -40,6 +40,7 @@ async function meta(a: MetaDoc) {
     details: a.details ?? "", modes: modes.length ? modes : [...ACTIVITY_MODES],
     visibility: a.visibility ?? "private",
     category: a.category ?? "tertiary", sector: a.sector ?? "", subject: a.subject ?? "",
+    kind: a.kind ?? "quiz",
     createdAt: a.createdAt,
     ownerName: c.owner.name, contributors: c.others, questionCount: c.total,
   };

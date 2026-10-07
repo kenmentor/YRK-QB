@@ -73,7 +73,7 @@ const TYPE_SHORT: Record<string, string> = {
   sct: "SCT", fill_in: "Fill-in", saq: "SAQ", short_answer: "Short answer",
   essay: "Essay / LEQ", compound: "Compound", meq: "MEQ", matching: "Matching",
   emq: "EMQ", kfq: "KFQ", osce: "OSCE rubric", dops: "DOPS", minicex: "Mini-CEX",
-  msf: "MSF", viva: "Viva",
+  msf: "MSF", viva: "Viva", stem: "Stem (unscored)",
 };
 
 export function typeLabel(type: string | undefined | null) {
